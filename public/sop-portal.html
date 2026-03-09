@@ -85,6 +85,27 @@ body{font-family:'Google Sans','Roboto',Arial,sans-serif;background:#f8f9fa;colo
 /* === TOAST === */
 .toast{position:fixed;bottom:70px;right:20px;background:#323232;color:#fff;padding:10px 20px;border-radius:4px;font-size:13px;z-index:300;opacity:0;transform:translateY(10px);transition:all 0.3s ease;pointer-events:none;}
 .toast.show{opacity:1;transform:translateY(0);}
+
+/* === TRIGGER RUN BUTTON === */
+.trigger-run-btn{background:#1e8e3e;color:#fff;border:none;border-radius:4px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;margin-right:8px;transition:all 0.2s;}
+.trigger-run-btn:hover{background:#1a7c37;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+.trigger-run-btn:active{transform:scale(0.97);}
+.trigger-run-btn.running{background:#5f6368;cursor:wait;pointer-events:none;}
+.trigger-run-btn .btn-spinner{display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;}
+.trigger-run-btn.running .btn-spinner{display:inline-block;}
+.trigger-run-btn.running .btn-icon{display:none;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.trigger-run-btn .btn-icon{font-size:15px;line-height:1;}
+
+/* === SUCCESS TOAST (enhanced) === */
+.run-toast{position:fixed;bottom:24px;right:24px;background:#1e8e3e;color:#fff;padding:14px 20px;border-radius:8px;font-size:13px;font-family:'Google Sans','Roboto',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.25);z-index:9999;display:none;max-width:420px;line-height:1.5;}
+.run-toast.show{display:flex;align-items:flex-start;gap:10px;animation:slideUp 0.3s ease-out;}
+.run-toast.error{background:#d93025;}
+.run-toast a{color:#fff;text-decoration:underline;font-weight:500;}
+.run-toast .toast-close{cursor:pointer;opacity:0.7;font-size:16px;margin-left:8px;flex-shrink:0;}
+.run-toast .toast-close:hover{opacity:1;}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
 </style>
 </head>
 <body>
@@ -97,6 +118,11 @@ body{font-family:'Google Sans','Roboto',Arial,sans-serif;background:#f8f9fa;colo
     <span class="ls-confidential">Company Confidential</span>
   </div>
   <div class="ls-spacer"></div>
+    <button class="trigger-run-btn" id="triggerRunBtn" data-testid="trigger-run-btn" onclick="triggerNewRun()" title="SOP updated — trigger a new activity run on Pace Dashboard">
+    <span class="btn-spinner"></span>
+    <span class="btn-icon">&#9889;</span>
+    Trigger Run
+  </button>
   <button class="ls-btn-reset" data-testid="reset-btn">&#8592; Reset</button>
   <button class="ls-btn-share" data-testid="share-btn">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15 5v2h3.59l-9.83 9.83 1.41 1.41L20 8.41V12h2V3h-9v2h2zm-3 14H5V7h7V5H5a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-7h-2v5a2 2 0 01-2 2z"/></svg>
@@ -730,6 +756,112 @@ body{font-family:'Google Sans','Roboto',Arial,sans-serif;background:#f8f9fa;colo
       window.triggerGetSelectedAccount = function() {
         return document.getElementById('activeAccount').textContent;
       };
+    
+      // === PACE DASHBOARD TRIGGER ===
+      var SUPABASE_URL = 'https://csvjcpmxndgaujxlvikw.supabase.co';
+      var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdmpjcG14bmRnYXVqeGx2aWt3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjAyOTkzNiwiZXhwIjoyMDg3NjA1OTM2fQ.81sjVPgI5QzYLlwz1YwbkCNxK-07Rki98px_JUhK6To';
+      var PROCESS_ID = '65dbe6b4-122f-458c-b7ff-6f99c951c109';
+      var DASHBOARD_URL = 'https://pace-live-dashboard.vercel.app';
+
+      function showRunToast(msg, isError) {
+        var t = document.getElementById('runToast');
+        t.className = 'run-toast show' + (isError ? ' error' : '');
+        t.innerHTML = msg + '<span class="toast-close" onclick="this.parentElement.className=\'run-toast\'">&times;</span>';
+        if (!isError) setTimeout(function(){ t.className = 'run-toast'; }, 8000);
+      }
+
+      function generateRunName() {
+        var acct = document.getElementById('activeAccount').textContent || 'Unknown';
+        var now = new Date();
+        var ts = now.toISOString().slice(5,16).replace('T',' ').replace(':','');
+        return 'SOP-' + acct.split(' ')[0].toUpperCase() + '-' + ts;
+      }
+
+      async function triggerNewRun() {
+        var btn = document.getElementById('triggerRunBtn');
+        btn.classList.add('running');
+        btn.querySelector('.btn-icon') && (btn.querySelector('.btn-icon').style.display = 'none');
+
+        var runName = generateRunName();
+        var account = document.getElementById('activeAccount').textContent || 'Unknown';
+
+        try {
+          // 1. Create the activity run
+          var resp = await fetch(SUPABASE_URL + '/rest/v1/activity_runs', {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_KEY,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              process_id: PROCESS_ID,
+              name: runName,
+              document_name: 'SOP Update — ' + account,
+              status: 'in_progress',
+              current_status_text: 'SOP change detected. Processing...'
+            })
+          });
+
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          var run = (await resp.json())[0];
+
+          // 2. Log the first step — SOP change detected
+          var changedCells = document.querySelectorAll('td[style*="background"]');
+          var changeCount = changedCells.length || 'multiple';
+
+          await fetch(SUPABASE_URL + '/rest/v1/activity_logs', {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_KEY,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              run_id: run.id,
+              step_number: 1,
+              log_type: 'system',
+              message: 'SOP update detected for ' + account + ' — new activity run started.',
+              metadata: {
+                step_name: 'SOP Change Detection',
+                reasoning_steps: [
+                  'Detected SOP modification on the Pre-Booking Processes page',
+                  'Account affected: ' + account,
+                  'Run initiated: ' + runName,
+                  'Awaiting Pace agent to pick up and execute workflow steps'
+                ]
+              }
+            })
+          });
+
+          // 3. Show success toast with dashboard link
+          showRunToast(
+            '<div><strong>&#10003; Run created: ' + runName + '</strong><br>' +
+            'Activity run started on Pace Dashboard.<br>' +
+            '<a href="' + DASHBOARD_URL + '" target="_blank">Open Dashboard &rarr;</a></div>',
+            false
+          );
+
+        } catch(e) {
+          console.error('Trigger run failed:', e);
+          showRunToast('<strong>Failed to trigger run</strong><br>' + e.message, true);
+        } finally {
+          btn.classList.remove('running');
+          var icon = btn.querySelector('.btn-icon');
+          if (icon) icon.style.display = '';
+        }
+      }
+
+      /**
+       * Playwright helper: trigger a new activity run from browser agent
+       * @returns {Promise<object>} the created run object
+       */
+      window.triggerNewActivityRun = async function() {
+        return await triggerNewRun();
+      };
+
     </script>
 
     </div><!-- /.ls-canvas -->
@@ -742,5 +874,9 @@ body{font-family:'Google Sans','Roboto',Arial,sans-serif;background:#f8f9fa;colo
     <!-- Toast notification -->
     <div class="toast" id="toast"></div>
 
-  </body>
+  
+<!-- Run trigger toast -->
+<div class="run-toast" id="runToast"></div>
+
+</body>
 </html>
