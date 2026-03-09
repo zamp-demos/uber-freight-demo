@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Freight TMS Demo — Pace by Zamp</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#202124;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;}
+.container{max-width:720px;width:100%;}
+.header{text-align:center;margin-bottom:48px;}
+.logo{font-size:13px;font-weight:600;color:#1a73e8;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+h1{font-size:32px;font-weight:700;color:#1e1e2d;margin-bottom:8px;}
+.subtitle{font-size:16px;color:#5f6368;line-height:1.5;}
+.cards{display:flex;flex-direction:column;gap:16px;}
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:24px;display:flex;align-items:center;gap:20px;text-decoration:none;color:inherit;transition:all .15s;}
+.card:hover{border-color:#1a73e8;box-shadow:0 2px 12px rgba(26,115,232,.15);transform:translateY(-1px);}
+.card-icon{width:56px;height:56px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.card-icon.sop{background:#fef3e0;color:#c8962e;}
+.card-icon.workload{background:#e8f0fe;color:#1a73e8;}
+.card-icon.bluejay{background:#e6f4ea;color:#0d904f;}
+.card-body{flex:1;}
+.card-title{font-size:17px;font-weight:600;color:#202124;margin-bottom:4px;}
+.card-desc{font-size:13px;color:#5f6368;line-height:1.4;}
+.card-arrow{color:#80868b;font-size:20px;flex-shrink:0;}
+.card:hover .card-arrow{color:#1a73e8;}
+.footer{text-align:center;margin-top:48px;font-size:12px;color:#80868b;}
+.footer a{color:#1a73e8;text-decoration:none;}
+.pillars{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:32px 0 40px;}
+.pillar{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:14px 16px;text-align:center;}
+.pillar-num{font-size:11px;font-weight:700;color:#1a73e8;margin-bottom:4px;}
+.pillar-text{font-size:12px;color:#5f6368;line-height:1.3;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">Pace by Zamp</div>
+    <h1>Freight TMS Demo</h1>
+    <p class="subtitle">Browser agent demo portals — self-contained, editable, Playwright-ready</p>
+  </div>
+
+  <div class="pillars">
+    <div class="pillar"><div class="pillar-num">Pillar 1</div><div class="pillar-text">Natural language SOP — no code</div></div>
+    <div class="pillar"><div class="pillar-num">Pillar 2</div><div class="pillar-text">Live visibility via Pace Dashboard</div></div>
+    <div class="pillar"><div class="pillar-num">Pillar 3</div><div class="pillar-text">HITL "Needs Attention" flow</div></div>
+    <div class="pillar"><div class="pillar-num">Pillar 4</div><div class="pillar-text">UI resilience across portal versions</div></div>
+  </div>
+
+  <div class="cards">
+    <a class="card" href="/sop-portal.html">
+      <div class="card-icon sop">📋</div>
+      <div class="card-body">
+        <div class="card-title">SOP Portal</div>
+        <div class="card-desc">Looker Studio-style SOP with editable steps, 3 accounts (Acme Packaging, Atlas Beverages, Summit Foods), macros table. 245 editable cells.</div>
+      </div>
+      <span class="card-arrow">→</span>
+    </a>
+    <a class="card" href="/workload-portal.html">
+      <div class="card-icon workload">📦</div>
+      <div class="card-body">
+        <div class="card-title">Workload Portal</div>
+        <div class="card-desc">Freight TMS load board with 3-column layout, inline SVG maps, award margin cards, accept/reject sidebar. 3 demo loads.</div>
+      </div>
+      <span class="card-arrow">→</span>
+    </a>
+    <a class="card" href="/bluejay-portal.html">
+      <div class="card-icon bluejay">🚚</div>
+      <div class="card-body">
+        <div class="card-title">Vendor TMS Portal</div>
+        <div class="card-desc">BlueJay/e2open style TMS with SSO login simulation, shipment search, tile dashboard, and detail views.</div>
+      </div>
+      <span class="card-arrow">→</span>
+    </a>
+  </div>
+
+  <div class="footer">
+    All portals are self-contained HTML — no external dependencies.<br>
+    Every field is <code>contenteditable</code> or has Playwright <code>window.triggerX</code> helpers.<br><br>
+    <a href="https://zamp.ai" target="_blank">zamp.ai</a>
+  </div>
+</div>
+</body>
+</html>

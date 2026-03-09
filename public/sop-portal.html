@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[SOP] Pre-Booking Processes: All Accounts - Looker Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Google Sans','Roboto',Arial,sans-serif;background:#f8f9fa;color:#202124;font-size:13px;line-height:1.4;}
+
+/* === LOOKER STUDIO TOP BAR === */
+.ls-topbar{background:#fff;border-bottom:1px solid #dadce0;height:48px;display:flex;align-items:center;padding:0 16px;position:sticky;top:0;z-index:100;}
+.ls-logo{display:flex;align-items:center;gap:8px;margin-right:16px;}
+.ls-logo svg{width:24px;height:24px;}
+.ls-doc-title{font-size:14px;color:#202124;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;}
+.ls-confidential{color:#1a73e8;font-size:12px;margin-left:8px;cursor:pointer;}
+.ls-spacer{flex:1;}
+.ls-btn-reset{border:1px solid #dadce0;background:#fff;color:#5f6368;border-radius:4px;padding:4px 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;margin-right:8px;}
+.ls-btn-reset:hover{background:#f1f3f4;}
+.ls-btn-share{background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:6px 20px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;margin-right:8px;}
+.ls-btn-share:hover{background:#1765cc;}
+.ls-icon-btn{width:36px;height:36px;border:none;background:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#5f6368;font-size:18px;}
+.ls-icon-btn:hover{background:#f1f3f4;}
+.ls-avatar{width:32px;height:32px;border-radius:50%;background:#1a73e8;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;margin-left:4px;}
+
+/* === REPORT CANVAS === */
+.ls-canvas{max-width:1200px;margin:0 auto;background:#fff;min-height:100vh;padding:24px 32px 60px 32px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+
+/* === TITLE ROW === */
+.sop-title-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;}
+.sop-title{font-size:22px;font-weight:700;}
+.sop-title .gold{color:#bf8b2e;}
+.sop-title .blk{color:#202124;}
+.sop-title-right{font-size:12px;color:#202124;}
+.sop-title-right a{color:#1a73e8;font-style:italic;text-decoration:none;}
+.sop-title-right .zoom{font-style:italic;margin-left:12px;}
+
+/* === SELECTION ROW (FILTERS) === */
+.selection-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.sel-badge{background:#1a1a2e;color:#fff;font-size:11px;font-weight:700;letter-spacing:0.5px;padding:6px 14px;border-radius:20px;text-transform:uppercase;}
+.sel-dropdown{background:#c8962e;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;position:relative;}
+.sel-dropdown .count{opacity:0.85;font-size:11px;}
+.sel-dropdown .arrow{font-size:10px;margin-left:2px;}
+.sel-dropdown:hover{background:#b8872a;}
+/* Dropdown panel */
+.dd-panel{position:absolute;top:100%;left:0;background:#fff;border:1px solid #dadce0;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:220px;z-index:50;display:none;padding:4px 0;}
+.dd-panel.open{display:block;}
+.dd-item{padding:8px 16px;cursor:pointer;font-size:13px;color:#202124;display:flex;align-items:center;gap:8px;}
+.dd-item:hover{background:#f1f3f4;}
+.dd-item.selected{background:#e8f0fe;font-weight:500;}
+.dd-item .check{color:#1a73e8;font-size:14px;}
+
+/* === SECTION LABELS === */
+.section-badge{background:#1a1a2e;color:#fff;font-size:11px;font-weight:700;letter-spacing:0.5px;padding:8px 6px;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);border-radius:4px 0 0 4px;text-transform:uppercase;min-height:60px;display:flex;align-items:center;justify-content:center;line-height:1.2;text-align:center;}
+
+/* === TABLES === */
+.sop-section{display:flex;margin-bottom:0;}
+.sop-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+.sop-table th{padding:8px 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;text-align:left;border:1px solid #bbb;color:#fff;}
+.sop-table td{padding:8px 10px;border:1px solid #dadce0;font-size:12.5px;vertical-align:top;background:#fff;min-height:40px;}
+.sop-table td[contenteditable="true"]{cursor:text;}
+.sop-table td[contenteditable="true"]:focus{outline:2px solid #1a73e8;outline-offset:-2px;background:#e8f0fe;}
+.sop-table td[contenteditable="true"]:hover{background:#f8f9fa;}
+/* Gold header (pre-checks) */
+.th-gold{background:#c8962e;}
+/* Blue header (non-standard steps) */
+.th-blue{background:#3b6abf;}
+/* Row number */
+.row-num{font-weight:700;color:#5f6368;width:30px;text-align:center;}
+
+/* === BLACK DIVIDER === */
+.black-divider{background:#1a1a2e;color:#fff;font-size:13px;font-weight:700;padding:10px 16px;margin:0;letter-spacing:0.5px;}
+
+/* === PAGINATION === */
+.pagination{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:6px 10px;font-size:12px;color:#5f6368;border:1px solid #dadce0;border-top:none;background:#fff;}
+.pagination button{border:none;background:none;cursor:pointer;color:#5f6368;font-size:14px;padding:2px 6px;border-radius:2px;}
+.pagination button:hover{background:#f1f3f4;}
+.pagination button:disabled{opacity:0.3;cursor:default;}
+
+/* === EDIT MODE INDICATOR === */
+.edit-indicator{position:fixed;bottom:20px;right:20px;background:#1a73e8;color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:500;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:flex;align-items:center;gap:6px;z-index:200;}
+.edit-indicator .dot{width:8px;height:8px;border-radius:50%;background:#4caf50;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* === TOAST === */
+.toast{position:fixed;bottom:70px;right:20px;background:#323232;color:#fff;padding:10px 20px;border-radius:4px;font-size:13px;z-index:300;opacity:0;transform:translateY(10px);transition:all 0.3s ease;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- LOOKER STUDIO TOP BAR -->
+<div class="ls-topbar">
+  <div class="ls-logo">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="6" r="4" fill="#4285f4"/><circle cx="12" cy="18" r="4" fill="#34a853"/><circle cx="6" cy="12" r="4" fill="#fbbc04"/><circle cx="18" cy="12" r="4" fill="#ea4335"/></svg>
+    <span class="ls-doc-title">[SOP] Pre-Booking Processes: All Accounts</span>
+    <span class="ls-confidential">Company Confidential</span>
+  </div>
+  <div class="ls-spacer"></div>
+  <button class="ls-btn-reset" data-testid="reset-btn">&#8592; Reset</button>
+  <button class="ls-btn-share" data-testid="share-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15 5v2h3.59l-9.83 9.83 1.41 1.41L20 8.41V12h2V3h-9v2h2zm-3 14H5V7h7V5H5a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-7h-2v5a2 2 0 01-2 2z"/></svg>
+    Share
+  </button>
+  <button class="ls-icon-btn" title="More options">&#8942;</button>
+  <div class="ls-avatar" data-testid="user-avatar">P</div>
+</div>
+
+<!-- REPORT CANVAS -->
+<div class="ls-canvas">
+
+  <!-- TITLE ROW -->
+  <div class="sop-title-row">
+    <div class="sop-title">
+      <span class="gold">SOP</span><span class="blk"> | Pre-Booking Processes: All Accounts</span>
+    </div>
+    <div class="sop-title-right">
+      <a href="#">Backend Input</a>
+      <span class="zoom">Best viewed at 90% Zoom</span>
+    </div>
+  </div>
+
+  <!-- SELECTION ROW -->
+  <div class="selection-row">
+    <span class="sel-badge">SELECTION</span>
+    <div style="position:relative;">
+      <button class="sel-dropdown" data-testid="account-filter" onclick="toggleDropdown('accountDD')">
+        Account Name: <span id="activeAccount">Acme Packaging</span> <span class="count">(1)</span> <span class="arrow">&#9662;</span>
+      </button>
+      <div class="dd-panel" id="accountDD">
+        <div class="dd-item selected" data-account="ball" onclick="selectAccount('ball','Acme Packaging')"><span class="check">&#10003;</span> Acme Packaging</div>
+        <div class="dd-item" data-account="niagara" onclick="selectAccount('niagara','Atlas Beverages')"><span class="check" style="visibility:hidden">&#10003;</span> Atlas Beverages</div>
+        <div class="dd-item" data-account="pepsi" onclick="selectAccount('pepsi','Summit Foods')"><span class="check" style="visibility:hidden">&#10003;</span> Summit Foods</div>
+      </div>
+    </div>
+    <div style="position:relative;">
+      <button class="sel-dropdown" data-testid="process-filter" onclick="toggleDropdown('processDD')">
+        Process: <span id="activeProcess">Prep</span> <span class="count">(1)</span> <span class="arrow">&#9662;</span>
+      </button>
+      <div class="dd-panel" id="processDD">
+        <div class="dd-item selected" data-process="prep" onclick="selectProcess('prep','Prep')"><span class="check">&#10003;</span> Prep</div>
+        <div class="dd-item" data-process="post" onclick="selectProcess('post','Post-Delivery')"><span class="check" style="visibility:hidden">&#10003;</span> Post-Delivery</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PRE-CHECKS & LOOKUP KEY ============ -->
+  <div class="sop-section" data-testid="prechecks-section">
+    <div class="section-badge">PRE-CHECKS &amp;<br>LOOKUP KEY</div>
+    <div style="flex:1;">
+      <table class="sop-table" id="prechecksTable" data-testid="prechecks-table">
+        <thead>
+          <tr>
+            <th class="th-gold" style="width:30px;">#</th>
+            <th class="th-gold" style="width:25%;">Pre-action SOLVE criteria</th>
+            <th class="th-gold" style="width:30%;">Pre-action ESCALATE criteria</th>
+            <th class="th-gold" style="width:22%;">Customer Ref. # Lookup</th>
+            <th class="th-gold" style="width:18%;">AM POC</th>
+          </tr>
+        </thead>
+        <!-- ACME PACKAGING ROWS -->
+        <tbody class="account-rows" data-account="ball">
+          <tr data-testid="precheck-row-1">
+            <td class="row-num">1.</td>
+            <td contenteditable="true" data-testid="precheck-solve-1" data-field="solve">IF, Load Status Not Accepted/ Tendered [AND] it is not a TONU tender</td>
+            <td contenteditable="true" data-testid="precheck-escalate-1" data-field="escalate">If the pick up facility is not "Acme Packaging" / "ACME-FAIRFIELD" / "ACME-ROME" / "ACME-FINDLAY" / "ACME-SARATOGA"<br>[OR] If Pickup Appt Time is scheduled after the Delivery Appt Time</td>
+            <td contenteditable="true" data-testid="precheck-lookup-1" data-field="lookup">Shipment Id: BC</td>
+            <td contenteditable="true" data-testid="precheck-ampoc-1" data-field="ampoc">Jamie Morgan<br>jmorgan@example-freight.com</td>
+          </tr>
+          <tr data-testid="precheck-row-2">
+            <td class="row-num">2.</td>
+            <td contenteditable="true" data-testid="precheck-solve-2" data-field="solve">IF, Load Status Not Accepted/ Tendered [AND] it is not a TONU tender</td>
+            <td contenteditable="true" data-testid="precheck-escalate-2" data-field="escalate">If the pick up facility is not "Acme Packaging" / "ACME-FAIRFIELD" / "ACME-ROME" / "ACME-FINDLAY" / "ACME-SARATOGA"</td>
+            <td contenteditable="true" data-testid="precheck-lookup-2" data-field="lookup">PO #: Use delivery reference</td>
+            <td contenteditable="true" data-testid="precheck-ampoc-2" data-field="ampoc"></td>
+          </tr>
+          <tr data-testid="precheck-row-3">
+            <td class="row-num">3.</td>
+            <td contenteditable="true" data-testid="precheck-solve-3" data-field="solve">Verify load is not a duplicate by checking delivery reference number against existing loads</td>
+            <td contenteditable="true" data-testid="precheck-escalate-3" data-field="escalate">If duplicate load found with same delivery reference and PU/DEL dates</td>
+            <td contenteditable="true" data-testid="precheck-lookup-3" data-field="lookup">TMS Reference: AC-prefix</td>
+            <td contenteditable="true" data-testid="precheck-ampoc-3" data-field="ampoc"></td>
+          </tr>
+        </tbody>
+        <!-- ATLAS BEVERAGES ROWS -->
+        <tbody class="account-rows" data-account="niagara" style="display:none;">
+          <tr data-testid="precheck-row-1">
+            <td class="row-num">1.</td>
+            <td contenteditable="true" data-field="solve">IF, Load Status Not Accepted/ Tendered [AND] it is not a TONU tender</td>
+            <td contenteditable="true" data-field="escalate">If the pick up facility is not "Atlas Beverages" / "CAROLINA-CAR" / "LAS VEGAS" / "KENOSHA" / "Louisville" / "BAYTOWN"<br>[OR] If Pickup Appt Time is scheduled after the Delivery Appt Time</td>
+            <td contenteditable="true" data-field="lookup">Shipment Id: NU</td>
+            <td contenteditable="true" data-field="ampoc">Riley Cooper<br>rcooper@example-freight.com</td>
+          </tr>
+          <tr data-testid="precheck-row-2">
+            <td class="row-num">2.</td>
+            <td contenteditable="true" data-field="solve">IF, Load Status Not Accepted/ Tendered [AND] it is not a TONU tender</td>
+            <td contenteditable="true" data-field="escalate">If the pick up facility is not "Atlas Beverages" / "CAROLINA-CAR" / "LAS VEGAS" / "KENOSHA" / "Louisville" / "BAYTOWN"</td>
+            <td contenteditable="true" data-field="lookup">PO #: Use delivery reference</td>
+            <td contenteditable="true" data-field="ampoc"></td>
+          </tr>
+          <tr data-testid="precheck-row-3">
+            <td class="row-num">3.</td>
+            <td contenteditable="true" data-field="solve">Verify load is not a duplicate by checking delivery reference number</td>
+            <td contenteditable="true" data-field="escalate">If duplicate load found with same delivery reference</td>
+            <td contenteditable="true" data-field="lookup">TMS Reference: AT-prefix</td>
+            <td contenteditable="true" data-field="ampoc"></td>
+          </tr>
+        </tbody>
+        <!-- SUMMIT FOODS ROWS -->
+        <tbody class="account-rows" data-account="pepsi" style="display:none;">
+          <tr data-testid="precheck-row-1">
+            <td class="row-num">1.</td>
+            <td contenteditable="true" data-field="solve">IF, Load Status Not Accepted/ Tendered [AND] it is not a TONU tender</td>
+            <td contenteditable="true" data-field="escalate">If pickup facility is not in approved Summit Foods origin list<br>[OR] If Pickup Appt Time is after Delivery Appt Time</td>
+            <td contenteditable="true" data-field="lookup">Shipment Id: PP</td>
+            <td contenteditable="true" data-field="ampoc">Sam Kelly<br>skelly@example-freight.com</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pagination" data-testid="prechecks-pagination">
+        <span id="precheckPageInfo">1-3 of 3</span>
+        <button disabled>&lt;</button>
+        <button disabled>&gt;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BLACK DIVIDER ============ -->
+  <div class="black-divider" data-testid="nonstd-divider">NON-STANDARD STEPS</div>
+
+  <!-- ============ NON-STANDARD STEPS TABLE ============ -->
+  <div class="sop-section" data-testid="nonstd-section">
+    <div class="section-badge">NON-STANDARD<br>STEPS</div>
+    <div style="flex:1;">
+      <table class="sop-table" id="nonstdTable" data-testid="nonstd-table">
+        <thead>
+          <tr>
+            <th class="th-blue" style="width:28px;">#</th>
+            <th class="th-blue" style="width:12%;">Task</th>
+            <th class="th-blue" style="width:10%;">Platform</th>
+            <th class="th-blue" style="width:8%;">Category</th>
+            <th class="th-blue" style="width:7%;">Type</th>
+            <th class="th-blue" style="width:18%;">Criteria</th>
+            <th class="th-blue" style="width:14%;">Action</th>
+            <th class="th-blue" style="width:14%;">Resource</th>
+            <th class="th-blue" style="width:17%;">Instructions</th>
+          </tr>
+        </thead>
+        <!-- ACME PACKAGING STEPS -->
+        <tbody class="account-rows" data-account="ball">
+          <tr data-testid="step-row-1">
+            <td class="row-num">1.</td>
+            <td contenteditable="true" data-testid="step-task-1" data-field="task">Login to Vendor TMS</td>
+            <td contenteditable="true" data-field="platform">Vendor TMS</td>
+            <td contenteditable="true" data-field="category">System Access</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria"></td>
+            <td contenteditable="true" data-field="action">Navigate to Vendor TMS login, use LastPass credentials</td>
+            <td contenteditable="true" data-testid="step-resource-1" data-field="resource">VENDOR TMS: https://uber-freight-demo-bluejay.vercel.app<br>User: demo_user<br>Pass: REFER TO LASTPASS<br>(ACME_VENDOR_ACCESS)</td>
+            <td contenteditable="true" data-field="instructions"></td>
+          </tr>
+          <tr data-testid="step-row-2">
+            <td class="row-num">2.</td>
+            <td contenteditable="true" data-testid="step-task-2" data-field="task">Search Shipment</td>
+            <td contenteditable="true" data-field="platform">Vendor TMS</td>
+            <td contenteditable="true" data-field="category">Lookup</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-testid="step-criteria-2" data-field="criteria">Use Customer Ref # from Zendesk tender (BC-prefix for Acme Corp)</td>
+            <td contenteditable="true" data-field="action">Enter shipment ref in search field and execute</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Navigate to Shipment Management &gt; Search. Use delivery reference number to check for duplicate loads.</td>
+          </tr>
+          <tr data-testid="step-row-3">
+            <td class="row-num">3.</td>
+            <td contenteditable="true" data-testid="step-task-3" data-field="task">Extract Commodity &amp; Spot Bid</td>
+            <td contenteditable="true" data-field="platform">Vendor TMS</td>
+            <td contenteditable="true" data-field="category">Data Extract</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Record commodity description and spot bid amount from shipment detail</td>
+            <td contenteditable="true" data-field="action">Note commodity: ALCOHOL BEVERAGE<br>Note spot bid: $0.00</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">LESS than -250 = -251, -252, etc.<br>Spot bid of $0.00 means no spot rate offered.</td>
+          </tr>
+          <tr data-testid="step-row-4">
+            <td class="row-num">4.</td>
+            <td contenteditable="true" data-testid="step-task-4" data-field="task">Open Load in Workload</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Update</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Search load by Load ID (e.g. UF-5872041587)</td>
+            <td contenteditable="true" data-field="action">Open load detail panel</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Use top search bar in Workload portal</td>
+          </tr>
+          <tr data-testid="step-row-5">
+            <td class="row-num">5.</td>
+            <td contenteditable="true" data-testid="step-task-5" data-field="task">Update Load Tags</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Update</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Set tag based on SOP rules for account</td>
+            <td contenteditable="true" data-testid="step-action-5" data-field="action">Select "Contract Primary" tag</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Contract Primary = loads from contracted shippers with established rates</td>
+          </tr>
+          <tr data-testid="step-row-6">
+            <td class="row-num">6.</td>
+            <td contenteditable="true" data-testid="step-task-6" data-field="task">Set Commodity</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Update</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Translate vendor commodity to Workload format</td>
+            <td contenteditable="true" data-testid="step-action-6" data-field="action">Set commodity to "Alcohol Cans"</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-testid="step-instructions-6" data-field="instructions">ALCOHOL BEVERAGE &#8594; Alcohol Cans per commodity mapping table</td>
+          </tr>
+          <tr data-testid="step-row-7">
+            <td class="row-num">7.</td>
+            <td contenteditable="true" data-testid="step-task-7" data-field="task">Set Carrier Notes</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Update</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria"></td>
+            <td contenteditable="true" data-testid="step-action-7" data-field="action">Enter "PO KTD IS REQUIRED"</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Required for all Acme Corp loads. Carrier must have PO and KTD before pickup.</td>
+          </tr>
+          <tr data-testid="step-row-8">
+            <td class="row-num">8.</td>
+            <td contenteditable="true" data-testid="step-task-8" data-field="task">Save &amp; Complete</td>
+            <td contenteditable="true" data-field="platform">TMS / Zendesk</td>
+            <td contenteditable="true" data-field="category">Completion</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria"></td>
+            <td contenteditable="true" data-field="action">Save load changes. Return to Zendesk. Apply completion macro. Submit as Solved.</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Use macro: "BLR: Operational: Load Prep: Completed (Acme Corp)"</td>
+          </tr>
+        </tbody>
+        <!-- Atlas Non-Standard Rows (hidden by default) -->
+        <tbody class="account-rows" data-account="niagara" style="display:none;">
+          <tr>
+            <td contenteditable="true" data-field="step">1</td>
+            <td contenteditable="true" data-field="task">Login to Vendor TMS</td>
+            <td contenteditable="true" data-field="platform">Vendor TMS</td>
+            <td contenteditable="true" data-field="category">System Access</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria"></td>
+            <td contenteditable="true" data-field="action">Open Vendor TMS, authenticate via SSO</td>
+            <td contenteditable="true" data-field="resource">VENDOR TMS: https://uber-freight-demo-bluejay.vercel.app &bull; User: demo_user &bull; Pass: LASTPASS</td>
+            <td contenteditable="true" data-field="instructions">Use LastPass to retrieve credentials for ATLAS_VENDOR_ACCESS</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">2</td>
+            <td contenteditable="true" data-field="task">Search Shipment</td>
+            <td contenteditable="true" data-field="platform">Vendor TMS</td>
+            <td contenteditable="true" data-field="category">Lookup</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Shipment ref uses NU- prefix</td>
+            <td contenteditable="true" data-field="action">Enter shipment reference in search</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Shipment Management &gt; Search &gt; Enter AT-prefix reference</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">3</td>
+            <td contenteditable="true" data-field="task">Extract Commodity &amp; Rate</td>
+            <td contenteditable="true" data-field="platform">Vendor TMS</td>
+            <td contenteditable="true" data-field="category">Data Extract</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Record commodity description and spot rate</td>
+            <td contenteditable="true" data-field="action">Copy commodity: WATER BOTTLES, Rate: $0.00</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Note commodity for Workload translation</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">4</td>
+            <td contenteditable="true" data-field="task">Open Load in Workload</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Update</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Search by load ID</td>
+            <td contenteditable="true" data-field="action">Open load detail panel</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Workload &gt; Search load ID &gt; Open detail</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">5</td>
+            <td contenteditable="true" data-field="task">Update Tags</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Update</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Set tag per SOP lookup</td>
+            <td contenteditable="true" data-field="action">Select tag: &lsquo;Spot&rsquo;</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Spot = non-contracted rate; applies to all Atlas loads</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">6</td>
+            <td contenteditable="true" data-field="task">Set Commodity</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Update</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Translate vendor commodity to Workload format</td>
+            <td contenteditable="true" data-field="action">Set commodity: &lsquo;Bottled Water&rsquo;</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">WATER BOTTLES &rarr; Bottled Water</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">7</td>
+            <td contenteditable="true" data-field="task">Add Carrier Notes</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Update</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria"></td>
+            <td contenteditable="true" data-field="action">Enter: &lsquo;DELIVERY APPOINTMENT REQUIRED&rsquo;</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Required on all Atlas shipments</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">8</td>
+            <td contenteditable="true" data-field="task">Save &amp; Complete</td>
+            <td contenteditable="true" data-field="platform">TMS / Zendesk</td>
+            <td contenteditable="true" data-field="category">Completion</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria"></td>
+            <td contenteditable="true" data-field="action">Save changes, apply macro, set Solved</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Use macro: &quot;BLR: Operational: Load Prep: Completed (Atlas)&quot;</td>
+          </tr>
+        </tbody>
+        <!-- Summit Foods Non-Standard Rows (hidden by default) -->
+        <tbody class="account-rows" data-account="pepsi" style="display:none;">
+          <tr>
+            <td contenteditable="true" data-field="step">1</td>
+            <td contenteditable="true" data-field="task">Login to Vendor TMS</td>
+            <td contenteditable="true" data-field="platform">Vendor TMS</td>
+            <td contenteditable="true" data-field="category">System Access</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria"></td>
+            <td contenteditable="true" data-field="action">Open Vendor TMS, authenticate via SSO</td>
+            <td contenteditable="true" data-field="resource">VENDOR TMS: https://uber-freight-demo-bluejay.vercel.app &bull; User: demo_user &bull; Pass: LASTPASS</td>
+            <td contenteditable="true" data-field="instructions">Use LastPass to retrieve Summit Foods credentials</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">2</td>
+            <td contenteditable="true" data-field="task">Search Shipment</td>
+            <td contenteditable="true" data-field="platform">Vendor TMS</td>
+            <td contenteditable="true" data-field="category">Lookup</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Shipment ref uses PC- prefix</td>
+            <td contenteditable="true" data-field="action">Enter shipment reference in search</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Shipment Management &gt; Search &gt; Enter SF-prefix reference</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">3</td>
+            <td contenteditable="true" data-field="task">Extract Commodity &amp; Rate</td>
+            <td contenteditable="true" data-field="platform">Vendor TMS</td>
+            <td contenteditable="true" data-field="category">Data Extract</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Record commodity and contract rate</td>
+            <td contenteditable="true" data-field="action">Copy commodity and rate values</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Note commodity for Workload translation; verify BOL number</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">4</td>
+            <td contenteditable="true" data-field="task">Open Load in Workload</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Update</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Search by load ID</td>
+            <td contenteditable="true" data-field="action">Open load detail panel</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Workload &gt; Search load ID &gt; Open detail</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">5</td>
+            <td contenteditable="true" data-field="task">Validate BOL</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Validation</td>
+            <td contenteditable="true" data-field="type">Non-Standard</td>
+            <td contenteditable="true" data-field="criteria">BOL number must match vendor TMS record</td>
+            <td contenteditable="true" data-field="action">Cross-reference BOL; escalate if mismatch</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Summit Foods requires BOL validation before completion</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">6</td>
+            <td contenteditable="true" data-field="task">Update Tags &amp; Commodity</td>
+            <td contenteditable="true" data-field="platform">Freight TMS</td>
+            <td contenteditable="true" data-field="category">Update</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria">Set tag and translate commodity</td>
+            <td contenteditable="true" data-field="action">Set tag per lookup; translate commodity</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Use Pre-Checks lookup for tag and commodity mapping</td>
+          </tr>
+          <tr>
+            <td contenteditable="true" data-field="step">7</td>
+            <td contenteditable="true" data-field="task">Save &amp; Complete</td>
+            <td contenteditable="true" data-field="platform">TMS / Zendesk</td>
+            <td contenteditable="true" data-field="category">Completion</td>
+            <td contenteditable="true" data-field="type">Standard</td>
+            <td contenteditable="true" data-field="criteria"></td>
+            <td contenteditable="true" data-field="action">Save changes, apply macro, set Solved</td>
+            <td contenteditable="true" data-field="resource"></td>
+            <td contenteditable="true" data-field="instructions">Use macro: "BLR: Operational: Load Prep: Completed (Summit Foods)"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pagination"><span>1-8 of 8</span><button disabled>&lt;</button><button disabled>&gt;</button></div>
+      </div>
+      </div>
+
+      <!-- MACROS & COMPLETION SECTION -->
+      <div style="margin-top:24px;">
+        <div class="black-divider">MACROS &amp; COMPLETION</div>
+        <div class="sop-section">
+          <div class="section-badge">MACROS</div>
+          <div style="flex:1;">
+            <table class="sop-table" id="macrosTable">
+              <thead>
+                <tr>
+                  <th class="th-gold" style="width:140px;">Account</th>
+                  <th class="th-gold">Escalation Macro</th>
+                  <th class="th-gold">Confirmed Macro</th>
+                  <th class="th-gold">TONU Macro</th>
+                  <th class="th-gold" style="width:200px;">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td contenteditable="true" data-field="account">Acme Packaging</td>
+                  <td contenteditable="true" data-field="escalation">BLR: Operational: Load Prep: Escalated (Acme Corp)</td>
+                  <td contenteditable="true" data-field="confirmed">BLR: Operational: Load Prep: Completed (Acme Corp)</td>
+                  <td contenteditable="true" data-field="tonu">BLR: Operational: TONU (Acme Corp)</td>
+                  <td contenteditable="true" data-field="notes">Pre-Booking Success macro for confirmed loads</td>
+                </tr>
+                <tr>
+                  <td contenteditable="true" data-field="account">Atlas Beverages</td>
+                  <td contenteditable="true" data-field="escalation">BLR: Operational: Load Prep: Escalated (Atlas)</td>
+                  <td contenteditable="true" data-field="confirmed">BLR: Operational: Load Prep: Completed (Atlas)</td>
+                  <td contenteditable="true" data-field="tonu">BLR: Operational: TONU (Atlas)</td>
+                  <td contenteditable="true" data-field="notes">Standard completion flow</td>
+                </tr>
+                <tr>
+                  <td contenteditable="true" data-field="account">Summit Foods</td>
+                  <td contenteditable="true" data-field="escalation">BLR: Operational: Load Prep: Escalated (Summit Foods)</td>
+                  <td contenteditable="true" data-field="confirmed">BLR: Operational: Load Prep: Completed (Summit Foods)</td>
+                  <td contenteditable="true" data-field="tonu">BLR: Operational: TONU (Summit Foods)</td>
+                  <td contenteditable="true" data-field="notes">Requires additional BOL validation</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    <!-- JavaScript: Dropdown Logic + Playwright Helpers -->
+    <script>
+      /* ── Dropdown Toggle ── */
+      function toggleDropdown(id) {
+        document.querySelectorAll('.dd-panel').forEach(function(p) {
+          if (p.id !== id) p.classList.remove('open');
+        });
+        document.getElementById(id).classList.toggle('open');
+      }
+
+      /* ── Account Selection ── */
+      function selectAccount(key, label) {
+        document.getElementById('activeAccount').textContent = label;
+        // Show/hide tbody rows by account
+        document.querySelectorAll('.account-rows').forEach(function(tb) {
+          tb.style.display = (tb.dataset.account === key) ? '' : 'none';
+        });
+        // Update checkmarks in dropdown
+        document.querySelectorAll('#accountDD .dd-item').forEach(function(item) {
+          var sel = item.dataset.account === key;
+          item.classList.toggle('selected', sel);
+          item.querySelector('.check').style.visibility = sel ? 'visible' : 'hidden';
+        });
+        document.getElementById('accountDD').classList.remove('open');
+        showToast('Filtered: ' + label);
+      }
+
+      /* ── Process Selection ── */
+      function selectProcess(key, label) {
+        document.getElementById('activeProcess').textContent = label;
+        document.querySelectorAll('#processDD .dd-item').forEach(function(item) {
+          var sel = item.dataset.process === key;
+          item.classList.toggle('selected', sel);
+          item.querySelector('.check').style.visibility = sel ? 'visible' : 'hidden';
+        });
+        document.getElementById('processDD').classList.remove('open');
+        showToast('Process: ' + label);
+      }
+
+      /* ── Click-outside to close dropdowns ── */
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.sel-dropdown') && !e.target.closest('.dd-panel')) {
+          document.querySelectorAll('.dd-panel').forEach(function(p) {
+            p.classList.remove('open');
+          });
+        }
+      });
+
+      /* ── Toast Notification ── */
+      function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(function() { t.classList.remove('show'); }, 2500);
+      }
+
+      /* ══════════════════════════════════════════
+         PLAYWRIGHT HELPERS (window.triggerX pattern)
+         Browser agent calls these to interact with the SOP
+         ══════════════════════════════════════════ */
+
+      /**
+       * Filter SOP by account key
+       * @param {string} key - 'ball', 'niagara', or 'pepsi'
+       * @returns {boolean} success
+       */
+      window.triggerFilterByAccount = function(key) {
+        var items = document.querySelectorAll('#accountDD .dd-item');
+        var label = '';
+        items.forEach(function(i) {
+          if (i.dataset.account === key) {
+            label = i.textContent.trim().replace(/^✓\s*/, '');
+          }
+        });
+        if (label) {
+          selectAccount(key, label);
+          return true;
+        }
+        return false;
+      };
+
+      /**
+       * Edit a cell in any SOP table
+       * @param {string} tableId - 'prechecksTable', 'nonstdTable', or 'macrosTable'
+       * @param {number} rowIdx - 0-based row index in the visible tbody
+       * @param {string} fieldName - data-field attribute value
+       * @param {string} newValue - new text content
+       * @returns {boolean} success
+       */
+      window.triggerEditCell = function(tableId, rowIdx, fieldName, newValue) {
+        var table = document.getElementById(tableId);
+        if (!table) return false;
+        var tbodies = Array.from(table.querySelectorAll('tbody'));
+        var visibleTbody = tbodies.find(function(tb) {
+          return tb.style.display !== 'none';
+        });
+        if (!visibleTbody) visibleTbody = tbodies[0];
+        if (!visibleTbody) return false;
+        var rows = visibleTbody.querySelectorAll('tr');
+        if (rowIdx >= rows.length) return false;
+        var cell = rows[rowIdx].querySelector('[data-field="' + fieldName + '"]');
+        if (!cell) return false;
+        cell.textContent = newValue;
+        cell.style.backgroundColor = '#fff3cd';
+        setTimeout(function() { cell.style.backgroundColor = ''; }, 1500);
+        cell.focus();
+        showToast('Edited: ' + fieldName + ' → ' + newValue);
+        return true;
+      };
+
+      /**
+       * Read a cell value from any SOP table
+       * @param {string} tableId - table element ID
+       * @param {number} rowIdx - 0-based visible row index
+       * @param {string} fieldName - data-field attribute
+       * @returns {string|null} cell text or null
+       */
+      window.triggerGetCellValue = function(tableId, rowIdx, fieldName) {
+        var table = document.getElementById(tableId);
+        if (!table) return null;
+        var tbodies = Array.from(table.querySelectorAll('tbody'));
+        var visibleTbody = tbodies.find(function(tb) {
+          return tb.style.display !== 'none';
+        });
+        if (!visibleTbody) visibleTbody = tbodies[0];
+        if (!visibleTbody) return null;
+        var rows = visibleTbody.querySelectorAll('tr');
+        if (rowIdx >= rows.length) return null;
+        var cell = rows[rowIdx].querySelector('[data-field="' + fieldName + '"]');
+        return cell ? cell.textContent : null;
+      };
+
+      /**
+       * Get all SOP steps for the currently selected account
+       * @returns {Array} array of step objects
+       */
+      window.triggerGetAllSteps = function() {
+        var table = document.getElementById('nonstdTable');
+        if (!table) return [];
+        var tbodies = Array.from(table.querySelectorAll('tbody'));
+        var visibleTbody = tbodies.find(function(tb) {
+          return tb.style.display !== 'none';
+        });
+        if (!visibleTbody) visibleTbody = tbodies[0];
+        if (!visibleTbody) return [];
+        var rows = visibleTbody.querySelectorAll('tr');
+        var steps = [];
+        rows.forEach(function(row) {
+          var step = {};
+          row.querySelectorAll('td[data-field]').forEach(function(cell) {
+            step[cell.dataset.field] = cell.textContent;
+          });
+          steps.push(step);
+        });
+        return steps;
+      };
+
+      /**
+       * Save all changes (simulated)
+       * @returns {boolean} true
+       */
+      window.triggerSave = function() {
+        showToast('All changes saved successfully');
+        return true;
+      };
+
+      /**
+       * Get currently selected account
+       * @returns {string} account name
+       */
+      window.triggerGetSelectedAccount = function() {
+        return document.getElementById('activeAccount').textContent;
+      };
+    </script>
+
+    </div><!-- /.ls-canvas -->
+
+    <!-- Editable mode indicator -->
+    <div class="edit-indicator">
+      <span class="dot"></span> Editable Mode — Click any cell to edit
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
+
+  </body>
+</html>

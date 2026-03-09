@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workload - Freight TMS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#202124;font-size:14px;overflow:hidden;height:100vh;}
+/* ── Top Search Bar ── */
+.top-bar{display:flex;align-items:center;height:48px;background:#1e1e2d;padding:0 12px;gap:8px;z-index:100;position:relative;}
+.top-bar .back-arrow{color:#aaa;font-size:18px;cursor:pointer;padding:0 8px;}
+.top-bar .back-arrow:hover{color:#fff;}
+.search-wrap{flex:1;display:flex;align-items:center;background:#2d2d3f;border-radius:4px;padding:0 10px;height:32px;max-width:500px;}
+.search-chip{display:inline-flex;align-items:center;background:#3b5998;color:#fff;font-size:12px;padding:2px 8px;border-radius:3px;margin-right:6px;white-space:nowrap;}
+.search-chip .chip-x{margin-left:5px;cursor:pointer;opacity:.7;}
+.search-chip .chip-x:hover{opacity:1;}
+.search-wrap input{flex:1;background:transparent;border:none;outline:none;color:#ccc;font-size:13px;}
+.search-wrap input::placeholder{color:#666;}
+.top-bar .gear{color:#888;font-size:16px;cursor:pointer;padding:0 8px;}
+.top-bar .gear:hover{color:#fff;}
+.top-bar .search-btn{background:#1a73e8;color:#fff;border:none;padding:6px 16px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;margin-left:auto;}
+.top-bar .search-btn:hover{background:#1558b0;}
+/* ── 3-Column Layout ── */
+.app-layout{display:flex;height:calc(100vh - 48px);}
+/* ── Left Sidebar ── */
+.left-sidebar{width:320px;background:#fff;border-right:1px solid #e0e0e0;display:flex;flex-direction:column;flex-shrink:0;}
+.ls-header{padding:12px 16px 4px;border-bottom:1px solid #e0e0e0;}
+.ls-title{font-size:15px;font-weight:700;color:#202124;}
+.ls-subtitle{font-size:12px;color:#80868b;margin-top:2px;}
+.ls-links{display:flex;gap:12px;margin-top:6px;}
+.ls-links a{font-size:11px;color:#1a73e8;cursor:pointer;text-decoration:none;}
+.ls-links a:hover{text-decoration:underline;}
+.ls-filter{display:flex;align-items:center;gap:6px;padding:8px 16px;background:#f8f9fa;border-bottom:1px solid #e0e0e0;font-size:12px;color:#5f6368;cursor:pointer;}
+.ls-filter:hover{background:#e8f0fe;color:#1a73e8;}
+.ls-filter .filter-icon{font-size:14px;}
+/* ── Load Results Table ── */
+.load-results{flex:1;overflow-y:auto;overflow-x:auto;}
+.load-results table{width:100%;border-collapse:collapse;min-width:400px;}
+.load-results th{text-align:left;padding:6px 12px;font-size:11px;font-weight:600;color:#80868b;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid #e0e0e0;background:#fafafa;white-space:nowrap;position:sticky;top:0;z-index:2;}
+.load-results td{padding:8px 12px;font-size:13px;border-bottom:1px solid #f0f0f0;white-space:nowrap;cursor:pointer;}
+.load-results tr.active td{background:#e8f0fe;}
+.load-results tr:hover td{background:#f5f8ff;}
+.load-results tr.active:hover td{background:#e8f0fe;}
+.load-link{color:#1a73e8;font-weight:500;text-decoration:none;}
+.status-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;color:#fff;}
+.badge-tendered{background:#1a73e8;}
+.badge-available{background:#0d904f;}
+.badge-in-transit{background:#f09300;}
+.badge-delivered{background:#0d904f;}
+/* ── Center Content ── */
+.center-content{flex:1;overflow-y:auto;background:#f5f5f5;padding:20px 24px;}
+/* Load Header */
+.load-header{margin-bottom:16px;}
+.load-id-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.load-id-link{font-size:14px;font-weight:600;color:#1a73e8;cursor:pointer;text-decoration:none;}
+.load-id-link:hover{text-decoration:underline;}
+.load-icons{display:flex;gap:6px;}
+.load-icons span{font-size:14px;color:#80868b;cursor:pointer;}
+.load-icons span:hover{color:#202124;}
+.load-customer{font-size:22px;font-weight:700;color:#202124;margin-bottom:4px;}
+.load-route{font-size:14px;color:#5f6368;display:flex;align-items:center;gap:8px;}
+.load-route .shipper-tool{color:#1a73e8;font-size:13px;cursor:pointer;margin-left:auto;text-decoration:none;}
+.load-route .shipper-tool:hover{text-decoration:underline;}
+/* Status + Info */
+.status-row{display:flex;align-items:center;gap:12px;margin:12px 0 8px;}
+.status-select{padding:4px 24px 4px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235f6368'/%3E%3C/svg%3E") no-repeat right 8px center;-webkit-appearance:none;appearance:none;cursor:pointer;}
+.info-bar{background:#e8f0fe;border-radius:4px;padding:8px 12px;font-size:13px;color:#1a73e8;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.info-bar .dot{width:8px;height:8px;background:#1a73e8;border-radius:50%;flex-shrink:0;}
+/* Tabs */
+.tab-bar{display:flex;border-bottom:2px solid #e0e0e0;margin-bottom:16px;}
+.tab{padding:8px 16px;font-size:13px;color:#5f6368;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;}
+.tab:hover{color:#202124;background:#f5f8ff;}
+.tab.active{color:#1a73e8;border-bottom-color:#1a73e8;font-weight:500;}
+.tab .count{color:#80868b;font-size:12px;}
+/* Map */
+.map-container{background:#e8eaed;border-radius:8px;height:300px;position:relative;margin-bottom:16px;overflow:hidden;}
+.map-svg{width:100%;height:100%;}
+.map-fullscreen{position:absolute;top:8px;left:8px;font-size:12px;color:#1a73e8;background:rgba(255,255,255,.9);padding:4px 8px;border-radius:4px;cursor:pointer;text-decoration:none;z-index:5;}
+.map-zoom{position:absolute;bottom:8px;right:8px;display:flex;flex-direction:column;gap:2px;z-index:5;}
+.map-zoom button{width:28px;height:28px;background:rgba(255,255,255,.9);border:1px solid #dadce0;cursor:pointer;font-size:16px;color:#5f6368;display:flex;align-items:center;justify-content:center;}
+.map-zoom button:first-child{border-radius:4px 4px 0 0;}
+.map-zoom button:last-child{border-radius:0 0 4px 4px;}
+/* Cards Row */
+.cards-row{display:flex;gap:16px;margin-bottom:16px;}
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:16px;flex:1;}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.card-title{font-size:14px;font-weight:600;color:#202124;}
+.card-link{font-size:12px;color:#1a73e8;cursor:pointer;text-decoration:none;}
+.card-link:hover{text-decoration:underline;}
+.field-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
+.field-row:last-child{border-bottom:none;}
+.field-label{color:#5f6368;flex-shrink:0;width:120px;}
+.field-value{color:#202124;font-weight:500;text-align:right;}
+.field-value.positive{color:#0d904f;}
+.field-value.negative{color:#d93025;}
+.field-input{border:1px solid #dadce0;border-radius:4px;padding:4px 8px;font-size:13px;color:#202124;width:180px;text-align:right;}
+.field-input:focus{outline:none;border-color:#1a73e8;}
+.field-textarea{border:1px solid #dadce0;border-radius:4px;padding:6px 8px;font-size:13px;color:#202124;width:100%;min-height:48px;resize:vertical;font-family:inherit;}
+.field-textarea:focus{outline:none;border-color:#1a73e8;}
+/* ── Right Sidebar ── */
+.right-sidebar{width:280px;background:#fff;border-left:1px solid #e0e0e0;padding:16px;display:flex;flex-direction:column;flex-shrink:0;}
+.rs-header{font-size:15px;font-weight:700;color:#202124;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.rs-header .arrow{color:#80868b;font-size:12px;}
+.rs-field{margin-bottom:14px;}
+.rs-label{font-size:12px;color:#5f6368;margin-bottom:4px;font-weight:500;}
+.rs-select{width:100%;padding:6px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;background:#fff;cursor:pointer;}
+.rs-input{width:100%;padding:6px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;}
+.rs-input::placeholder{color:#80868b;}
+.rs-submit{width:100%;padding:8px 16px;background:#1a73e8;color:#fff;border:none;border-radius:4px;font-size:14px;font-weight:500;cursor:pointer;margin-top:auto;}
+.rs-submit:hover{background:#1558b0;}
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;padding:10px 24px;border-radius:4px;font-size:13px;opacity:0;transition:opacity .3s;z-index:1000;pointer-events:none;}
+.toast.show{opacity:1;}
+/* Edit indicator */
+.edit-indicator{position:fixed;bottom:24px;right:24px;background:#fff;border:1px solid #dadce0;border-radius:20px;padding:6px 14px;font-size:12px;color:#5f6368;display:flex;align-items:center;gap:6px;box-shadow:0 1px 4px rgba(0,0,0,.1);z-index:100;}
+.edit-indicator .dot{width:8px;height:8px;background:#0d904f;border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+</style>
+</head>
+<body>
+
+<!-- Top Search Bar -->
+<div class="top-bar">
+  <span class="back-arrow" title="Back">←</span>
+  <div class="search-wrap">
+    <span class="search-chip" id="searchChip">33847201 <span class="chip-x" onclick="clearSearch()">×</span></span>
+    <input type="text" id="searchInput" placeholder="Search by Load ID, Master #, Customer…" data-testid="search-input">
+  </div>
+  <span class="gear" title="Settings">⚙</span>
+  <button class="search-btn" data-testid="search-btn" onclick="doSearch()">Search</button>
+</div>
+
+<!-- 3-Column Layout -->
+<div class="app-layout">
+
+<!-- Left Sidebar: Load List -->
+<div class="left-sidebar">
+  <div class="ls-header">
+    <div class="ls-title">Universal search</div>
+    <div class="ls-subtitle">Viewing — loads</div>
+    <div class="ls-links">
+      <a>Clear filters</a>
+      <a>Export</a>
+    </div>
+  </div>
+  <div class="ls-filter">
+    <span class="filter-icon">☰</span> Filter &amp; sort
+  </div>
+  <div class="load-results">
+    <table>
+      <thead>
+        <tr><th>UF-Load #</th><th>Customer</th><th>Load Status</th><th>Pickup</th></tr>
+      </thead>
+      <tbody id="loadTableBody">
+        <tr class="load-row active" data-load="acme" onclick="selectLoad('acme')">
+          <td><a class="load-link" data-testid="load-link-acme">UF-5872041587</a></td>
+          <td>Acme Packaging</td>
+          <td><span class="status-badge badge-tendered">Tendered</span></td>
+          <td>Fairfield, CA</td>
+        </tr>
+        <tr class="load-row" data-load="atlas" onclick="selectLoad('atlas')">
+          <td><a class="load-link" data-testid="load-link-atlas">UF-5869092200</a></td>
+          <td>Atlas Beverages</td>
+          <td><span class="status-badge badge-tendered">Tendered</span></td>
+          <td>Ontario, CA</td>
+        </tr>
+        <tr class="load-row" data-load="summit" onclick="selectLoad('summit')">
+          <td><a class="load-link" data-testid="load-link-summit">UF-5870331456</a></td>
+          <td>Summit Foods</td>
+          <td><span class="status-badge badge-available">Available</span></td>
+          <td>Dallas, TX</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Center Content -->
+<div class="center-content">
+  <div class="load-header">
+    <div class="load-id-row">
+      <a class="load-id-link" id="loadIdLink" data-testid="load-id-link">UF-5872041587</a>
+      <div class="load-icons">
+        <span title="Copy">📋</span>
+        <span title="External link">↗</span>
+        <span title="More">⋯</span>
+      </div>
+    </div>
+    <div class="load-customer" id="loadCustomer" data-testid="load-customer">Acme Packaging</div>
+    <div class="load-route">
+      <span id="loadRoute" data-testid="load-route">85 mi · Fairfield, CA → Sacramento, CA</span>
+      <a class="shipper-tool" data-testid="shipper-tool">⊘ Shipper tool</a>
+    </div>
+  </div>
+
+  <div class="status-row">
+    <select class="status-select" id="statusSelect" data-testid="status-select" onchange="updateStatus()">
+      <option value="Tendered" selected>Tendered</option>
+      <option value="Available">Available</option>
+      <option value="In Transit">In Transit</option>
+      <option value="Delivered">Delivered</option>
+      <option value="Cancelled">Cancelled</option>
+    </select>
+    <span style="font-size:12px;color:#5f6368;" id="statusMeta">Last updated 2h ago</span>
+  </div>
+
+  <div class="info-bar" id="infoBar" data-testid="info-bar">
+    <span class="dot"></span>
+    <span id="infoText">Contract Primary — Acme Packaging account. PO KTD IS REQUIRED.</span>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active" data-tab="overview">Overview</div>
+    <div class="tab" data-tab="stops">Stops <span class="count">(2)</span></div>
+    <div class="tab" data-tab="financials">Financials</div>
+    <div class="tab" data-tab="documents">Documents <span class="count">(0)</span></div>
+    <div class="tab" data-tab="history">History</div>
+  </div>
+
+  <!-- Map -->
+  <div class="map-container" data-testid="map-container">
+    <a class="map-fullscreen">⛶ Fullscreen</a>
+    <svg class="map-svg" id="mapSvg" viewBox="0 0 600 300" preserveAspectRatio="xMidYMid slice">
+      <!-- Base: water -->
+      <rect width="600" height="300" fill="#c8e0f4"/>
+      <!-- California landmass (simplified) -->
+      <path id="mapLand" d="M40,20 L200,15 L260,40 L300,80 L320,140 L340,200 L320,280 L240,290 L180,260 L120,200 L60,140 L30,80 Z" fill="#e8e8d8" stroke="#ccc" stroke-width="1"/>
+      <!-- Route line: Fairfield to Sacramento -->
+      <line id="mapRoute" x1="145" y1="105" x2="195" y2="90" stroke="#1a73e8" stroke-width="3" stroke-dasharray="6,3"/>
+      <!-- Origin marker -->
+      <circle id="mapOrigin" cx="145" cy="105" r="6" fill="#d93025" stroke="#fff" stroke-width="2"/>
+      <text id="mapOriginLabel" x="145" y="128" text-anchor="middle" font-size="10" fill="#202124" font-weight="600">Fairfield</text>
+      <!-- Destination marker -->
+      <circle id="mapDest" cx="195" cy="90" r="6" fill="#0d904f" stroke="#fff" stroke-width="2"/>
+      <text id="mapDestLabel" x="195" y="78" text-anchor="middle" font-size="10" fill="#202124" font-weight="600">Sacramento</text>
+      <!-- Distance label -->
+      <rect x="152" y="88" width="36" height="16" rx="3" fill="rgba(255,255,255,.85)" stroke="#dadce0" stroke-width=".5"/>
+      <text id="mapDistLabel" x="170" y="99" text-anchor="middle" font-size="9" fill="#5f6368">85 mi</text>
+    </svg>
+    <div class="map-zoom">
+      <button>+</button>
+      <button>−</button>
+    </div>
+  </div>
+
+  <!-- Cards Row -->
+  <div class="cards-row">
+    <!-- Award Margin Card -->
+    <div class="card" data-testid="award-margin-card">
+      <div class="card-header">
+        <span class="card-title">Award margin</span>
+        <a class="card-link">View breakdown</a>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Customer rate</span>
+        <span class="field-value" id="fieldRate" data-testid="field-rate" contenteditable="true">$512.00</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Carrier cost</span>
+        <span class="field-value" id="fieldCarrierCost" data-testid="field-carrier-cost" contenteditable="true">$445.00</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Margin</span>
+        <span class="field-value positive" id="fieldMargin" data-testid="field-margin">$67.00 (13.1%)</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Target margin</span>
+        <span class="field-value" id="fieldTargetMargin" contenteditable="true">12.0%</span>
+      </div>
+    </div>
+
+    <!-- Load Details Card -->
+    <div class="card" data-testid="load-details-card">
+      <div class="card-header">
+        <span class="card-title">Load details</span>
+        <a class="card-link">Edit all</a>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Tags</span>
+        <span class="field-value" id="fieldTags" data-testid="field-tags" contenteditable="true">Contract Primary</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Commodity</span>
+        <span class="field-value" id="fieldCommodity" data-testid="field-commodity" contenteditable="true">Alcohol Cans</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Shipment #</span>
+        <span class="field-value" id="fieldShipment" data-testid="field-shipment" contenteditable="true">AC-44829103</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">PO #</span>
+        <span class="field-value" id="fieldPO" data-testid="field-po" contenteditable="true">PO-90281</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Master #</span>
+        <span class="field-value" id="fieldMaster" data-testid="field-master" contenteditable="true">33847201</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Equipment</span>
+        <span class="field-value" id="fieldEquipment" data-testid="field-equipment" contenteditable="true">Van (53')</span>
+      </div>
+      <div class="field-row" style="flex-direction:column;gap:4px;">
+        <span class="field-label">Carrier notes</span>
+        <textarea class="field-textarea" id="fieldNotes" data-testid="field-notes">PO KTD IS REQUIRED</textarea>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end center-content -->
+
+<!-- Right Sidebar: Accept or Reject -->
+<div class="right-sidebar" data-testid="right-sidebar">
+  <div class="rs-header">
+    Accept or reject
+    <span class="arrow">▸</span>
+  </div>
+
+  <div class="rs-field">
+    <div class="rs-label">Decision</div>
+    <select class="rs-select" id="decisionSelect" data-testid="decision-select">
+      <option value="">— Select —</option>
+      <option value="Accept">Accept</option>
+      <option value="Reject">Reject</option>
+      <option value="Counter">Counter</option>
+    </select>
+  </div>
+
+  <div class="rs-field">
+    <div class="rs-label">Assigned carrier</div>
+    <input class="rs-input" id="assignedCarrier" data-testid="assigned-carrier" placeholder="Search carrier…" contenteditable="true">
+  </div>
+
+  <div class="rs-field">
+    <div class="rs-label">Carrier rep</div>
+    <input class="rs-input" id="carrierRep" data-testid="carrier-rep" placeholder="Rep name" contenteditable="true">
+  </div>
+
+  <div class="rs-field">
+    <div class="rs-label">Load owner</div>
+    <input class="rs-input" id="loadOwner" data-testid="load-owner" value="ops-team@example-freight.com" contenteditable="true">
+  </div>
+
+  <div class="rs-field">
+    <div class="rs-label">Reason code</div>
+    <select class="rs-select" id="reasonCode" data-testid="reason-code">
+      <option value="">— Optional —</option>
+      <option value="capacity">Capacity</option>
+      <option value="rate">Rate</option>
+      <option value="service">Service</option>
+      <option value="equipment">Equipment</option>
+    </select>
+  </div>
+
+  <div class="rs-field">
+    <div class="rs-label">Notes</div>
+    <textarea class="field-textarea" id="decisionNotes" data-testid="decision-notes" placeholder="Add notes…" style="min-height:60px;"></textarea>
+  </div>
+
+  <button class="rs-submit" id="submitBtn" data-testid="submit-btn" onclick="submitDecision()">Submit</button>
+</div>
+
+</div><!-- end app-layout -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Edit indicator -->
+<div class="edit-indicator">
+  <span class="dot"></span> Live editable — click any value
+</div>
+
+<script>
+// ── Load Data ──
+const LOADS = {
+  acme: {
+    id: 'UF-5872041587', customer: 'Acme Packaging',
+    origin: 'Fairfield, CA', dest: 'Sacramento, CA', distance: '85 mi',
+    status: 'Tendered', tags: 'Contract Primary', commodity: 'Alcohol Cans',
+    shipment: 'AC-44829103', po: 'PO-90281', master: '33847201',
+    equipment: "Van (53')", notes: 'PO KTD IS REQUIRED',
+    rate: '$512.00', carrierCost: '$445.00', margin: '$67.00 (13.1%)',
+    targetMargin: '12.0%', infoText: 'Contract Primary — Acme Packaging account. PO KTD IS REQUIRED.',
+    map: {
+      land: 'M40,20 L200,15 L260,40 L300,80 L320,140 L340,200 L320,280 L240,290 L180,260 L120,200 L60,140 L30,80 Z',
+      route: {x1:145,y1:105,x2:195,y2:90},
+      origin: {cx:145,cy:105,label:'Fairfield',ly:128},
+      dest: {cx:195,cy:90,label:'Sacramento',ly:78},
+      distLabel: '85 mi', distRect: {x:152,y:88}
+    }
+  },
+  atlas: {
+    id: 'UF-5869092200', customer: 'Atlas Beverages',
+    origin: 'Ontario, CA', dest: 'Phoenix, AZ', distance: '340 mi',
+    status: 'Tendered', tags: 'Spot', commodity: 'Bottled Water',
+    shipment: 'AB-77201938', po: 'PO-44820', master: '44291038',
+    equipment: "Reefer (53')", notes: 'DELIVERY APPOINTMENT REQUIRED',
+    rate: '$680.00', carrierCost: '$595.00', margin: '$85.00 (12.5%)',
+    targetMargin: '11.0%', infoText: 'Spot load — Atlas Beverages. DELIVERY APPOINTMENT REQUIRED.',
+    map: {
+      land: 'M20,40 L180,30 L250,50 L320,100 L380,80 L440,100 L500,140 L520,200 L480,260 L400,280 L300,270 L200,240 L120,200 L60,140 L20,80 Z',
+      route: {x1:140,y1:160,x2:400,y2:130},
+      origin: {cx:140,cy:160,label:'Ontario',ly:183},
+      dest: {cx:400,cy:130,label:'Phoenix',ly:118},
+      distLabel: '340 mi', distRect: {x:252,y:135}
+    }
+  },
+  summit: {
+    id: 'UF-5870331456', customer: 'Summit Foods',
+    origin: 'Dallas, TX', dest: 'Houston, TX', distance: '240 mi',
+    status: 'Available', tags: 'Contract Primary', commodity: 'Packaged Snacks',
+    shipment: 'SF-98201456', po: 'PO-77301', master: '55382947',
+    equipment: "Van (53')", notes: '',
+    rate: '$395.00', carrierCost: '$340.00', margin: '$55.00 (13.9%)',
+    targetMargin: '13.0%', infoText: 'Contract Primary — Summit Foods account.',
+    map: {
+      land: 'M60,20 L200,15 L350,20 L500,40 L560,100 L580,180 L560,260 L480,290 L340,280 L200,260 L100,200 L40,120 Z',
+      route: {x1:250,y1:130,x2:340,y2:200},
+      origin: {cx:250,cy:130,label:'Dallas',ly:118},
+      dest: {cx:340,cy:200,label:'Houston',ly:223},
+      distLabel: '240 mi', distRect: {x:278,y:155}
+    }
+  }
+};
+
+let currentLoad = 'acme';
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Select Load ──
+function selectLoad(key) {
+  currentLoad = key;
+  const load = LOADS[key];
+  if (!load) return;
+
+  // Update sidebar active row
+  document.querySelectorAll('.load-row').forEach(r => r.classList.remove('active'));
+  const row = document.querySelector(`.load-row[data-load="${key}"]`);
+  if (row) row.classList.add('active');
+
+  // Update center header
+  document.getElementById('loadIdLink').textContent = load.id;
+  document.getElementById('loadCustomer').textContent = load.customer;
+  document.getElementById('loadRoute').innerHTML = `${load.distance} · ${load.origin} → ${load.dest}`;
+
+  // Status
+  const sel = document.getElementById('statusSelect');
+  sel.value = load.status;
+
+  // Info bar
+  document.getElementById('infoText').textContent = load.infoText;
+
+  // Award margin
+  document.getElementById('fieldRate').textContent = load.rate;
+  document.getElementById('fieldCarrierCost').textContent = load.carrierCost;
+  document.getElementById('fieldMargin').textContent = load.margin;
+  document.getElementById('fieldTargetMargin').textContent = load.targetMargin;
+
+  // Margin color
+  const marginEl = document.getElementById('fieldMargin');
+  marginEl.className = 'field-value ' + (parseFloat(load.margin.replace('$','')) >= 0 ? 'positive' : 'negative');
+
+  // Load details
+  document.getElementById('fieldTags').textContent = load.tags;
+  document.getElementById('fieldCommodity').textContent = load.commodity;
+  document.getElementById('fieldShipment').textContent = load.shipment;
+  document.getElementById('fieldPO').textContent = load.po;
+  document.getElementById('fieldMaster').textContent = load.master;
+  document.getElementById('fieldEquipment').textContent = load.equipment;
+  document.getElementById('fieldNotes').value = load.notes;
+
+  // Search chip
+  document.getElementById('searchChip').innerHTML = `${load.master} <span class="chip-x" onclick="clearSearch()">×</span>`;
+
+  // Update map
+  updateMap(load.map);
+
+  showToast(`Loaded ${load.customer} — ${load.id}`);
+}
+
+// ── Update Map SVG ──
+function updateMap(m) {
+  document.getElementById('mapLand').setAttribute('d', m.land);
+  const route = document.getElementById('mapRoute');
+  route.setAttribute('x1', m.route.x1); route.setAttribute('y1', m.route.y1);
+  route.setAttribute('x2', m.route.x2); route.setAttribute('y2', m.route.y2);
+  const orig = document.getElementById('mapOrigin');
+  orig.setAttribute('cx', m.origin.cx); orig.setAttribute('cy', m.origin.cy);
+  document.getElementById('mapOriginLabel').setAttribute('x', m.origin.cx);
+  document.getElementById('mapOriginLabel').setAttribute('y', m.origin.ly);
+  document.getElementById('mapOriginLabel').textContent = m.origin.label;
+  const dest = document.getElementById('mapDest');
+  dest.setAttribute('cx', m.dest.cx); dest.setAttribute('cy', m.dest.cy);
+  document.getElementById('mapDestLabel').setAttribute('x', m.dest.cx);
+  document.getElementById('mapDestLabel').setAttribute('y', m.dest.ly);
+  document.getElementById('mapDestLabel').textContent = m.dest.label;
+  // Distance label
+  const dr = document.querySelector('#mapSvg rect:nth-of-type(1)');
+  if (dr) { dr.setAttribute('x', m.distRect.x); dr.setAttribute('y', m.distRect.y); }
+  document.getElementById('mapDistLabel').textContent = m.distLabel;
+  document.getElementById('mapDistLabel').setAttribute('x', m.distRect.x + 18);
+  document.getElementById('mapDistLabel').setAttribute('y', m.distRect.y + 11);
+}
+
+// ── Search ──
+function doSearch() {
+  const val = document.getElementById('searchInput').value.trim();
+  if (!val) return;
+  const found = Object.entries(LOADS).find(([k, l]) =>
+    l.id.includes(val) || l.master.includes(val) || l.customer.toLowerCase().includes(val.toLowerCase())
+  );
+  if (found) {
+    selectLoad(found[0]);
+    document.getElementById('searchInput').value = '';
+  } else {
+    showToast('No loads found for "' + val + '"');
+  }
+}
+
+function clearSearch() {
+  document.getElementById('searchChip').style.display = 'none';
+  document.getElementById('searchInput').value = '';
+}
+
+// ── Status ──
+function updateStatus() {
+  const val = document.getElementById('statusSelect').value;
+  LOADS[currentLoad].status = val;
+  // Update sidebar badge
+  const row = document.querySelector(`.load-row[data-load="${currentLoad}"]`);
+  if (row) {
+    const badge = row.querySelector('.status-badge');
+    badge.textContent = val;
+    badge.className = 'status-badge badge-' + val.toLowerCase().replace(/\s/g, '-');
+  }
+  showToast(`Status updated to ${val}`);
+}
+
+// ── Submit Decision ──
+function submitDecision() {
+  const decision = document.getElementById('decisionSelect').value;
+  if (!decision) { showToast('Please select a decision first'); return; }
+  const notes = document.getElementById('decisionNotes').value;
+  showToast(`Decision: ${decision} submitted for ${LOADS[currentLoad].id}`);
+}
+
+// ── Tab switching ──
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ── Search on Enter ──
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+// ══════════════════════════════════════════
+// PLAYWRIGHT HELPERS — window.triggerX pattern
+// ══════════════════════════════════════════
+
+// Search and select a load by ID or master number
+window.triggerSearchLoad = function(query) {
+  const found = Object.entries(LOADS).find(([k, l]) =>
+    l.id === query || l.master === query || l.id.includes(query) || l.master.includes(query)
+  );
+  if (found) {
+    selectLoad(found[0]);
+    return { success: true, loadId: found[1].id, customer: found[1].customer };
+  }
+  return { success: false, error: 'Load not found: ' + query };
+};
+
+// Update a field value
+window.triggerUpdateField = function(fieldName, value) {
+  const fieldMap = {
+    'rate': 'fieldRate', 'carrier_cost': 'fieldCarrierCost', 'margin': 'fieldMargin',
+    'target_margin': 'fieldTargetMargin', 'tags': 'fieldTags', 'commodity': 'fieldCommodity',
+    'shipment': 'fieldShipment', 'po': 'fieldPO', 'master': 'fieldMaster',
+    'equipment': 'fieldEquipment', 'notes': 'fieldNotes',
+    'assigned_carrier': 'assignedCarrier', 'carrier_rep': 'carrierRep',
+    'load_owner': 'loadOwner', 'decision_notes': 'decisionNotes'
+  };
+  const elId = fieldMap[fieldName];
+  if (!elId) return { success: false, error: 'Unknown field: ' + fieldName };
+  const el = document.getElementById(elId);
+  if (!el) return { success: false, error: 'Element not found: ' + elId };
+  if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+    el.value = value;
+  } else {
+    el.textContent = value;
+  }
+  showToast(`Updated ${fieldName} → ${value}`);
+  return { success: true, field: fieldName, value: value };
+};
+
+// Get current field value
+window.triggerGetFieldValue = function(fieldName) {
+  const fieldMap = {
+    'rate': 'fieldRate', 'carrier_cost': 'fieldCarrierCost', 'margin': 'fieldMargin',
+    'target_margin': 'fieldTargetMargin', 'tags': 'fieldTags', 'commodity': 'fieldCommodity',
+    'shipment': 'fieldShipment', 'po': 'fieldPO', 'master': 'fieldMaster',
+    'equipment': 'fieldEquipment', 'notes': 'fieldNotes',
+    'load_id': 'loadIdLink', 'customer': 'loadCustomer', 'route': 'loadRoute',
+    'status': 'statusSelect', 'decision': 'decisionSelect',
+    'assigned_carrier': 'assignedCarrier', 'carrier_rep': 'carrierRep',
+    'load_owner': 'loadOwner', 'decision_notes': 'decisionNotes'
+  };
+  const elId = fieldMap[fieldName];
+  if (!elId) return { success: false, error: 'Unknown field: ' + fieldName };
+  const el = document.getElementById(elId);
+  if (!el) return { success: false, error: 'Element not found: ' + elId };
+  const val = el.tagName === 'TEXTAREA' || el.tagName === 'INPUT' || el.tagName === 'SELECT'
+    ? el.value : el.textContent;
+  return { success: true, field: fieldName, value: val };
+};
+
+// Set load status
+window.triggerSetStatus = function(status) {
+  const sel = document.getElementById('statusSelect');
+  sel.value = status;
+  updateStatus();
+  return { success: true, status: status };
+};
+
+// Set tags
+window.triggerSetTags = function(tag) {
+  document.getElementById('fieldTags').textContent = tag;
+  LOADS[currentLoad].tags = tag;
+  showToast(`Tags set to ${tag}`);
+  return { success: true, tags: tag };
+};
+
+// Set commodity
+window.triggerSetCommodity = function(commodity) {
+  document.getElementById('fieldCommodity').textContent = commodity;
+  LOADS[currentLoad].commodity = commodity;
+  showToast(`Commodity set to ${commodity}`);
+  return { success: true, commodity: commodity };
+};
+
+// Add carrier notes
+window.triggerAddCarrierNotes = function(notes) {
+  const el = document.getElementById('fieldNotes');
+  const existing = el.value.trim();
+  el.value = existing ? existing + '\n' + notes : notes;
+  LOADS[currentLoad].notes = el.value;
+  showToast('Carrier notes updated');
+  return { success: true, notes: el.value };
+};
+
+// Save current load changes
+window.triggerSave = function() {
+  const load = LOADS[currentLoad];
+  load.rate = document.getElementById('fieldRate').textContent;
+  load.carrierCost = document.getElementById('fieldCarrierCost').textContent;
+  load.tags = document.getElementById('fieldTags').textContent;
+  load.commodity = document.getElementById('fieldCommodity').textContent;
+  load.shipment = document.getElementById('fieldShipment').textContent;
+  load.po = document.getElementById('fieldPO').textContent;
+  load.master = document.getElementById('fieldMaster').textContent;
+  load.equipment = document.getElementById('fieldEquipment').textContent;
+  load.notes = document.getElementById('fieldNotes').value;
+  showToast(`Changes saved for ${load.id}`);
+  return { success: true, loadId: load.id };
+};
+
+// Submit decision
+window.triggerSubmitDecision = function() {
+  const decision = document.getElementById('decisionSelect').value;
+  if (!decision) return { success: false, error: 'No decision selected' };
+  const carrier = document.getElementById('assignedCarrier').value;
+  const notes = document.getElementById('decisionNotes').value;
+  const load = LOADS[currentLoad];
+  showToast(`${decision} submitted for ${load.id}`);
+  return { success: true, loadId: load.id, decision, carrier, notes };
+};
+
+</script>
+</body>
+</html>
