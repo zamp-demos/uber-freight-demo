@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zendesk — Load Prep Tickets</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background:#f8f9fa; color:#2f3941; display:flex; height:100vh; overflow:hidden; }
+/* LEFT SIDEBAR — ticket list */
+.sidebar { width:320px; background:#fff; border-right:1px solid #d8dcde; display:flex; flex-direction:column; }
+.sidebar-header { background:#03363D; color:#fff; padding:14px 16px; display:flex; align-items:center; gap:10px; }
+.sidebar-header .logo { font-size:20px; font-weight:700; letter-spacing:-0.5px; }
+.sidebar-header .env { font-size:11px; background:rgba(255,255,255,0.15); padding:2px 8px; border-radius:10px; }
+.views-bar { padding:10px 16px; border-bottom:1px solid #d8dcde; display:flex; align-items:center; gap:8px; }
+.views-bar .view-name { font-weight:600; font-size:14px; }
+.views-bar .count { background:#e9ebed; color:#68737d; font-size:11px; padding:1px 7px; border-radius:10px; font-weight:600; }
+.ticket-list { flex:1; overflow-y:auto; }
+.ticket-item { padding:12px 16px; border-bottom:1px solid #e9ebed; cursor:pointer; transition:background 0.15s; }
+.ticket-item:hover { background:#f8f9fa; }
+.ticket-item.active { background:#edf7ff; border-left:3px solid #1f73b7; }
+.ticket-item .t-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+.ticket-item .t-id { font-size:12px; color:#68737d; font-weight:600; }
+.ticket-item .t-time { font-size:11px; color:#87929d; }
+.ticket-item .t-subject { font-size:13px; font-weight:500; line-height:1.3; margin-bottom:4px; }
+.ticket-item .t-meta { display:flex; gap:6px; align-items:center; }
+.badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:3px; text-transform:uppercase; letter-spacing:0.3px; }
+.badge-open { background:#E34F32; color:#fff; }
+.badge-pending { background:#F0AD4E; color:#fff; }
+.badge-solved { background:#2DA77B; color:#fff; }
+.badge-high { background:#ffeee6; color:#c72a1c; border:1px solid #f5c6b8; }
+.badge-normal { background:#edf7ff; color:#1f73b7; border:1px solid #adcce4; }
+/* MAIN AREA */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.main-header { background:#03363D; color:#fff; padding:10px 20px; display:flex; align-items:center; gap:12px; font-size:14px; }
+.main-header .breadcrumb { opacity:0.7; font-size:13px; }
+.main-header .ticket-num { font-weight:700; }
+.content-area { flex:1; display:flex; overflow:hidden; }
+/* TICKET DETAIL */
+.ticket-detail { flex:1; overflow-y:auto; padding:24px; }
+.detail-header { margin-bottom:20px; }
+.detail-header h2 { font-size:18px; font-weight:600; margin-bottom:8px; }
+.detail-header .meta-row { display:flex; gap:8px; align-items:center; font-size:13px; color:#68737d; }
+.ticket-body { background:#fff; border:1px solid #d8dcde; border-radius:8px; padding:20px; margin-bottom:20px; }
+.ticket-body .sender { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #e9ebed; }
+.sender .avatar { width:32px; height:32px; border-radius:50%; background:#17494D; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; }
+.sender .name { font-weight:600; font-size:14px; }
+.sender .email { color:#87929d; font-size:12px; }
+.sender .timestamp { margin-left:auto; color:#87929d; font-size:12px; }
+.ticket-body .body-text { font-size:14px; line-height:1.7; color:#2f3941; }
+.body-text .field-label { font-weight:600; color:#17494D; }
+.body-text .field-value { background:#edf7ff; padding:1px 6px; border-radius:3px; font-family:monospace; font-size:13px; }
+/* INTERNAL NOTE */
+.note-section { margin-bottom:20px; }
+.note-section h3 { font-size:14px; font-weight:600; margin-bottom:8px; color:#49545c; }
+.note-textarea { width:100%; min-height:80px; padding:10px 12px; border:1px solid #d8dcde; border-radius:6px; font-family:inherit; font-size:13px; resize:vertical; background:#fffde6; }
+.note-textarea:focus { outline:none; border-color:#1f73b7; box-shadow:0 0 0 3px rgba(31,115,183,0.15); }
+/* MACRO BAR */
+.macro-bar { background:#fff; border-top:1px solid #d8dcde; padding:12px 24px; display:flex; align-items:center; gap:12px; }
+.macro-select { flex:1; padding:8px 12px; border:1px solid #d8dcde; border-radius:6px; font-size:13px; background:#fff; font-family:inherit; }
+.macro-select:focus { outline:none; border-color:#1f73b7; }
+.btn-submit { padding:8px 20px; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.15s; }
+.btn-submit-solved { background:#2DA77B; color:#fff; }
+.btn-submit-solved:hover { background:#228f68; }
+.btn-submit-update { background:#1f73b7; color:#fff; }
+.btn-submit-update:hover { background:#1a6099; }
+/* RIGHT SIDEBAR — properties */
+.props-panel { width:280px; background:#fff; border-left:1px solid #d8dcde; overflow-y:auto; padding:20px; }
+.props-panel h3 { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#87929d; margin-bottom:12px; }
+.prop-group { margin-bottom:16px; }
+.prop-label { font-size:11px; font-weight:600; color:#68737d; text-transform:uppercase; letter-spacing:0.3px; margin-bottom:4px; }
+.prop-value { font-size:13px; padding:6px 0; }
+.prop-value[contenteditable] { cursor:text; }
+.prop-value[contenteditable]:hover { background:#f8f9fa; border-radius:3px; }
+.tag { display:inline-block; background:#e9ebed; color:#49545c; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:500; margin:2px 2px 2px 0; }
+/* STATUS SELECT */
+.status-select { padding:4px 8px; border:1px solid #d8dcde; border-radius:4px; font-size:12px; font-weight:600; background:#fff; }
+/* TOAST */
+.toast { position:fixed; bottom:20px; right:20px; background:#03363D; color:#fff; padding:12px 20px; border-radius:8px; font-size:13px; font-weight:500; opacity:0; transition:opacity 0.3s; z-index:999; pointer-events:none; }
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10" fill="none" stroke="white" stroke-width="2"/><path d="M8 12h8M12 8v8" stroke="white" stroke-width="2"/></svg>
+      <span style="font-size:18px;font-weight:700;">Support</span>
+    </div>
+    <div class="views-bar">
+      <span style="font-weight:600;">Load Prep Queue</span>
+      <span class="ticket-count">3</span>
+    </div>
+    <div id="ticketList"></div>
+  </div>
+
+  <div class="main">
+    <div class="main-header">
+      <span id="breadcrumb" style="color:#666;font-size:13px;">Load Prep Queue &gt; </span>
+      <span id="ticketNum" style="font-weight:600;font-size:13px;">ZD-40283</span>
+    </div>
+
+    <div class="content-area">
+      <div class="ticket-detail">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <h2 id="detailSubject" style="margin:0;font-size:18px;font-weight:600;" contenteditable="true">Load Prep: Summit Foods — PP-88203741</h2>
+          <span id="detailStatusBadge" class="badge badge-open" data-testid="ticket-status-badge">Open</span>
+          <span id="detailPriorityBadge" class="badge badge-high" data-testid="ticket-priority-badge">High</span>
+        </div>
+
+        <div class="ticket-body" data-testid="ticket-body">
+          <div class="sender-row">
+            <div class="sender-avatar" id="senderInitial">S</div>
+            <div>
+              <strong id="senderName">Summit Foods Ops</strong>
+              <span id="senderTime" style="color:#999;font-size:12px;margin-left:8px;">Today at 08:14 AM</span>
+            </div>
+          </div>
+          <div id="detailBody" style="line-height:1.7;color:#333;" contenteditable="true" data-testid="ticket-body-text">
+            New load prep request for Summit Foods. Customer Ref: PP-88203741. Load ID: UF-5870331456. Route: Dallas, TX → Houston, TX. Pickup: 03/08/2026. Commodity: Packaged Snacks. Contract primary — verify against BlueJay shipment NBL.PP-88203741. AM: Sam Kelly.
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <label style="font-weight:600;font-size:13px;color:#555;">Internal Note</label>
+          <textarea id="internalNote" class="note-textarea" data-testid="internal-note" placeholder="Add an internal note..." contenteditable="true"></textarea>
+        </div>
+      </div>
+
+      <div class="props-panel" data-testid="props-panel">
+        <h3 style="margin:0 0 16px 0;font-size:14px;font-weight:600;color:#333;">Properties</h3>
+        <div class="prop-row"><span class="prop-label">Requester</span><span id="propRequester" class="prop-value" contenteditable="true">Summit Foods Ops</span></div>
+        <div class="prop-row"><span class="prop-label">Assignee</span><span id="propAssignee" class="prop-value" contenteditable="true">dispatch@example-freight.com</span></div>
+        <div class="prop-row"><span class="prop-label">Type</span><span id="propType" class="prop-value" contenteditable="true">Task</span></div>
+        <div class="prop-row"><span class="prop-label">Priority</span><span id="propPriority" class="prop-value" contenteditable="true">High</span></div>
+        <div class="prop-row">
+          <span class="prop-label">Status</span>
+          <select id="propStatus" data-testid="status-select" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+            <option value="Open" selected>Open</option>
+            <option value="Pending">Pending</option>
+            <option value="Solved">Solved</option>
+          </select>
+        </div>
+        <div class="prop-row"><span class="prop-label">Customer Ref</span><span id="propCustomerRef" class="prop-value" contenteditable="true" data-testid="customer-ref">PP-88203741</span></div>
+        <div class="prop-row"><span class="prop-label">Load ID</span><span id="propLoadId" class="prop-value" contenteditable="true" data-testid="load-id">UF-5870331456</span></div>
+        <div class="prop-row"><span class="prop-label">Tags</span><span id="propTags" class="prop-value" contenteditable="true" data-testid="ticket-tags">load-prep, summit-foods, contract-primary</span></div>
+      </div>
+    </div>
+
+    <div class="macro-bar" data-testid="macro-bar">
+      <select id="macroSelect" data-testid="macro-select" style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;">
+        <option value="">— Apply macro —</option>
+        <option value="BLR: Operational: Load Prep: Completed (Acme Corp)">BLR: Operational: Load Prep: Completed (Acme Corp)</option>
+        <option value="BLR: Operational: Load Prep: Completed (Atlas)">BLR: Operational: Load Prep: Completed (Atlas)</option>
+        <option value="BLR: Operational: Load Prep: Completed (Summit Foods)">BLR: Operational: Load Prep: Completed (Summit Foods)</option>
+        <option value="BLR: Operational: Load Prep: Escalated (Acme Corp)">BLR: Operational: Load Prep: Escalated (Acme Corp)</option>
+        <option value="BLR: Operational: Load Prep: Escalated (Atlas)">BLR: Operational: Load Prep: Escalated (Atlas)</option>
+        <option value="BLR: Operational: Load Prep: Escalated (Summit Foods)">BLR: Operational: Load Prep: Escalated (Summit Foods)</option>
+        <option value="BLR: Operational: TONU (Acme Corp)">BLR: Operational: TONU (Acme Corp)</option>
+        <option value="BLR: Operational: TONU (Atlas)">BLR: Operational: TONU (Atlas)</option>
+        <option value="BLR: Operational: TONU (Summit Foods)">BLR: Operational: TONU (Summit Foods)</option>
+      </select>
+      <button id="btn-submit-solved" class="btn-submit-solved" data-testid="btn-submit-solved" onclick="window.triggerSubmitTicket()">Submit as Solved</button>
+      <button class="btn-submit-update" data-testid="btn-submit-update">Submit as Open</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    /* ── Ticket Data ── */
+    const TICKETS = [
+      {
+        id: 'ZD-40281',
+        customer: 'Acme Packaging',
+        subject: 'Load Prep: Acme Packaging — BC-44829103',
+        status: 'Open',
+        priority: 'Normal',
+        requester: 'Acme Packaging Ops',
+        requesterEmail: 'ops@acme-packaging.example.com',
+        assignee: 'dispatch@example-freight.com',
+        type: 'Task',
+        customerRef: 'BC-44829103',
+        loadId: 'UF-5872041587',
+        route: 'Fairfield, CA → Sacramento, CA',
+        pickup: '03/08/2026',
+        commodity: 'Corrugated Packaging',
+        tags: ['load-prep', 'acme-packaging', 'contract-primary'],
+        macro: 'BLR: Operational: Load Prep: Completed (Acme Corp)',
+        time: 'Today at 07:42 AM',
+        body: 'New load prep request for Acme Packaging. Customer Ref: BC-44829103. Load ID: UF-5872041587. Route: Fairfield, CA → Sacramento, CA. Pickup: 03/08/2026. Commodity: Corrugated Packaging. Contract primary — verify against BlueJay shipment NBL.BC-44829103.'
+      },
+      {
+        id: 'ZD-40282',
+        customer: 'Atlas Beverages',
+        subject: 'Load Prep: Atlas Beverages — NU-77291034',
+        status: 'Open',
+        priority: 'Normal',
+        requester: 'Atlas Beverages Ops',
+        requesterEmail: 'logistics@atlas-bev.example.com',
+        assignee: 'dispatch@example-freight.com',
+        type: 'Task',
+        customerRef: 'NU-77291034',
+        loadId: 'UF-5869092200',
+        route: 'Ontario, CA → Phoenix, AZ',
+        pickup: '03/09/2026',
+        commodity: 'Beverages',
+        tags: ['load-prep', 'atlas-beverages', 'spot'],
+        macro: 'BLR: Operational: Load Prep: Completed (Atlas)',
+        time: 'Today at 07:58 AM',
+        body: 'New load prep request for Atlas Beverages. Customer Ref: NU-77291034. Load ID: UF-5869092200. Route: Ontario, CA → Phoenix, AZ. Pickup: 03/09/2026. Spot load — delivery appointment required.'
+      },
+      {
+        id: 'ZD-40283',
+        customer: 'Summit Foods',
+        subject: 'Load Prep: Summit Foods — PP-88203741',
+        status: 'Open',
+        priority: 'High',
+        requester: 'Summit Foods Ops',
+        requesterEmail: 'transport@summit-foods.example.com',
+        assignee: 'dispatch@example-freight.com',
+        type: 'Task',
+        customerRef: 'PP-88203741',
+        loadId: 'UF-5870331456',
+        route: 'Dallas, TX → Houston, TX',
+        pickup: '03/08/2026',
+        commodity: 'Packaged Snacks',
+        tags: ['load-prep', 'summit-foods', 'contract-primary'],
+        macro: 'BLR: Operational: Load Prep: Completed (Summit Foods)',
+        am: 'Sam Kelly',
+        amEmail: 'skelly@example-freight.com',
+        time: 'Today at 08:14 AM',
+        body: 'New load prep request for Summit Foods. Customer Ref: PP-88203741. Load ID: UF-5870331456. Route: Dallas, TX → Houston, TX. Pickup: 03/08/2026. Commodity: Packaged Snacks. Contract primary — verify against BlueJay shipment NBL.PP-88203741. AM: Sam Kelly.'
+      }
+    ];
+
+    let currentTicket = null;
+
+    /* ── Render Functions ── */
+    function renderTicketList() {
+      const list = document.getElementById('ticketList');
+      list.innerHTML = TICKETS.map(t => {
+        const prioClass = t.priority === 'High' ? 'badge-high' : 'badge-normal';
+        return `<div class="ticket-item ${currentTicket && currentTicket.id === t.id ? 'active' : ''}"
+                     data-testid="ticket-item-${t.id}" onclick="selectTicket('${t.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong style="font-size:13px;">${t.id}</strong>
+            <span class="badge badge-open" style="font-size:10px;">${t.status}</span>
+          </div>
+          <div style="font-size:12px;color:#333;margin:4px 0;font-weight:500;">${t.customer}</div>
+          <div style="font-size:11px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${t.subject}
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span style="font-size:10px;color:#999;">${t.time}</span>
+            <span class="badge ${prioClass}" style="font-size:9px;">${t.priority}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function selectTicket(ticketId) {
+      currentTicket = TICKETS.find(t => t.id === ticketId);
+      if (!currentTicket) return;
+      renderTicketList();
+      renderTicketDetail(currentTicket);
+    }
+
+    function renderTicketDetail(t) {
+      document.getElementById('ticketNum').textContent = t.id;
+      document.getElementById('detailSubject').textContent = t.subject;
+
+      const statusBadge = document.getElementById('detailStatusBadge');
+      statusBadge.textContent = t.status;
+      statusBadge.className = 'badge badge-' + t.status.toLowerCase();
+
+      const prioBadge = document.getElementById('detailPriorityBadge');
+      prioBadge.textContent = t.priority;
+      prioBadge.className = 'badge badge-' + (t.priority === 'High' ? 'high' : 'normal');
+
+      document.getElementById('senderInitial').textContent = t.customer.charAt(0);
+      document.getElementById('senderName').textContent = t.requester;
+      document.getElementById('senderTime').textContent = t.time;
+      document.getElementById('detailBody').textContent = t.body;
+      document.getElementById('internalNote').value = '';
+
+      /* Props panel */
+      document.getElementById('propRequester').textContent = t.requester;
+      document.getElementById('propAssignee').textContent = t.assignee;
+      document.getElementById('propType').textContent = t.type;
+      document.getElementById('propPriority').textContent = t.priority;
+      document.getElementById('propStatus').value = t.status;
+      document.getElementById('propCustomerRef').textContent = t.customerRef;
+      document.getElementById('propLoadId').textContent = t.loadId;
+      document.getElementById('propTags').textContent = t.tags.join(', ');
+
+      /* Reset macro */
+      document.getElementById('macroSelect').value = '';
+    }
+
+    /* ── Toast ── */
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    /* ── Playwright Helpers (9 total) ── */
+    window.triggerGetTicketList = function() {
+      return TICKETS.map(t => ({
+        id: t.id, subject: t.subject, status: t.status,
+        priority: t.priority, customer: t.customer
+      }));
+    };
+
+    window.triggerSelectTicket = function(ticketId) {
+      selectTicket(ticketId);
+      return { success: true, ticketId: ticketId };
+    };
+
+    window.triggerGetTicketDetails = function() {
+      if (!currentTicket) return null;
+      return JSON.parse(JSON.stringify(currentTicket));
+    };
+
+    window.triggerGetCustomerRef = function() {
+      return currentTicket ? currentTicket.customerRef : null;
+    };
+
+    window.triggerGetLoadId = function() {
+      return currentTicket ? currentTicket.loadId : null;
+    };
+
+    window.triggerApplyMacro = function(macroName) {
+      const sel = document.getElementById('macroSelect');
+      for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === macroName) {
+          sel.selectedIndex = i;
+          sel.style.transition = 'background 0.3s';
+          sel.style.background = '#e8f5e9';
+          setTimeout(() => sel.style.background = '', 1500);
+          return { success: true, macro: macroName };
+        }
+      }
+      return { success: false, error: 'Macro not found: ' + macroName };
+    };
+
+    window.triggerAddInternalNote = function(text) {
+      const note = document.getElementById('internalNote');
+      note.value = text;
+      note.style.transition = 'background 0.3s';
+      note.style.background = '#fff9e6';
+      setTimeout(() => note.style.background = '#fffde7', 1500);
+      return { success: true };
+    };
+
+    window.triggerSetStatus = function(status) {
+      const sel = document.getElementById('propStatus');
+      sel.value = status;
+      const badge = document.getElementById('detailStatusBadge');
+      badge.textContent = status;
+      badge.className = 'badge badge-' + status.toLowerCase();
+      if (currentTicket) currentTicket.status = status;
+      renderTicketList();
+      return { success: true, status: status };
+    };
+
+    window.triggerSubmitTicket = function() {
+      if (!currentTicket) return { success: false, error: 'No ticket selected' };
+      const macro = document.getElementById('macroSelect').value;
+      const note = document.getElementById('internalNote').value;
+
+      /* Set status to Solved */
+      window.triggerSetStatus('Solved');
+
+      /* Visual feedback on submit button */
+      const btn = document.getElementById('btn-submit-solved');
+      btn.textContent = '✓ Submitted';
+      btn.style.background = '#1a8a5e';
+      setTimeout(() => { btn.textContent = 'Submit as Solved'; btn.style.background = '#2DA77B'; }, 3000);
+
+      showToast('Ticket ' + currentTicket.id + ' submitted as Solved');
+      return {
+        success: true,
+        ticketId: currentTicket.id,
+        status: 'Solved',
+        macro: macro,
+        note: note
+      };
+    };
+
+    /* ── Init ── */
+    renderTicketList();
+    selectTicket('ZD-40283');
+  </script>
+</body>
+</html>
