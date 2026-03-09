@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>e2open OTM Cloud - Niagara</title>
+<title>Vendor TMS Cloud - Summit Foods</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a3a5c; color: #1a1a1a; font-size: 14px; overflow: hidden; height: 100vh; }
 
-/* Niagara blue background with tree branch pattern */
-.niagara-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #0d2840 0%, #1a3a5c 40%, #1e4266 70%, #15304d 100%); z-index: 0; }
-.niagara-bg::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 80%, rgba(255,255,255,0.03) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.04) 0%, transparent 50%); }
+/* Summit Foods blue background with tree branch pattern */
+.summit-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #0d2840 0%, #1a3a5c 40%, #1e4266 70%, #15304d 100%); z-index: 0; }
+.summit-bg::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 80%, rgba(255,255,255,0.03) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.04) 0%, transparent 50%); }
 .branch-overlay { position: absolute; top: 0; right: 0; width: 50%; height: 100%; opacity: 0.06; background: repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(255,255,255,0.3) 40px, rgba(255,255,255,0.3) 41px), repeating-linear-gradient(-30deg, transparent, transparent 60px, rgba(255,255,255,0.2) 60px, rgba(255,255,255,0.2) 61px); }
 
 /* Screen states */
@@ -166,16 +166,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </style>
 </head>
 <body>
-<div class="niagara-bg"><div class="branch-overlay"></div></div>
+<div class="summit-bg"><div class="branch-overlay"></div></div>
 
 <!-- SCREEN 1: SSO LOGIN -->
 <div class="screen sso-screen active" id="screen-sso" data-testid="screen-sso">
   <div class="sso-card">
     <div class="sso-logo">
-      <span class="sso-logo-text">niagara</span><span class="sso-logo-drop"></span>
+      <span class="sso-logo-text">summit</span><span class="sso-logo-drop"></span>
     </div>
-    <div class="sso-title">Sign in to Niagara TMS Portal</div>
-    <div class="sso-subtitle">e2open OTM Cloud — Single Sign-On</div>
+    <div class="sso-title">Sign in to Summit Foods TMS Portal</div>
+    <div class="sso-subtitle">Vendor TMS Cloud — Single Sign-On</div>
     <div class="sso-field">
       <label class="sso-label">Username</label>
       <div class="field-wrap">
@@ -202,14 +202,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <div class="lp-item" data-testid="lastpass-credential" onclick="selectLastPassCred()">
             <div class="lp-item-icon">🔒</div>
             <div class="lp-item-details">
-              <div class="lp-item-name">Niagara TMS — e2open OTM Cloud</div>
-              <div class="lp-item-user">UBER_FREIGHT_NIAGARA_ALL</div>
+              <div class="lp-item-name">Summit Foods TMS — Vendor TMS Cloud</div>
+              <div class="lp-item-user">FREIGHT_SUMMIT_ALL</div>
             </div>
           </div>
           <div class="lp-item" style="opacity:0.4;pointer-events:none;">
             <div class="lp-item-icon">🔒</div>
             <div class="lp-item-details">
-              <div class="lp-item-name">Niagara TMS — e2open (Staging)</div>
+              <div class="lp-item-name">Summit Foods TMS — Vendor TMS (Staging)</div>
               <div class="lp-item-user">URFR_STAGING</div>
             </div>
           </div>
@@ -222,7 +222,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     </div>
     <button class="sso-btn" id="ssoSignIn" data-testid="signin-button" onclick="ssoLogin()">Sign In</button>
     <div class="sso-forgot">Forgot password?</div>
-    <div class="sso-footer">Protected by Niagara SSO · e2open Identity Provider</div>
+    <div class="sso-footer">Protected by Summit Foods SSO · Vendor Identity Provider</div>
   </div>
 </div>
 
@@ -230,7 +230,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="screen dashboard-screen" id="screen-dashboard" data-testid="screen-dashboard">
   <div class="otm-nav">
     <span class="otm-hamburger">≡</span>
-    <span class="otm-logo-badge">niagara</span>
+    <span class="otm-logo-badge">summit</span>
     <span class="otm-title">OTM Cloud PRODUCTION</span>
     <div class="otm-nav-icons">
       <span class="otm-nav-icon">🏠</span>
@@ -241,11 +241,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <span class="otm-nav-icon">ⓘ</span>
     </div>
     <div class="otm-user" id="otmUser" data-testid="user-menu" onclick="showToast('Logout functionality')">
-      <span id="currentUsername">UBER_FREIGHT_NIAGARA_ALL</span> <span style="font-size:10px;">▾</span>
+      <span id="currentUsername">FREIGHT_SUMMIT_ALL</span> <span style="font-size:10px;">▾</span>
     </div>
   </div>
   <div class="dashboard-body">
-    <div class="niagara-bg"><div class="branch-overlay"></div></div>
+    <div class="summit-bg"><div class="branch-overlay"></div></div>
     <div class="tiles-grid">
       <div class="tile" data-testid="tile-ordinary-tender" onclick="navigateTo('search')"><div class="tile-icon blue">📋</div><div class="tile-label">Ordinary Tender</div></div>
       <div class="tile" data-testid="tile-shipment-view" onclick="showToast('Shipment View module not available in demo')"><div class="tile-icon blue">📦</div><div class="tile-label">Shipment View</div></div>
@@ -271,7 +271,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="screen search-screen" id="screen-search" data-testid="screen-search">
   <div class="otm-nav">
     <span class="otm-hamburger">≡</span>
-    <span class="otm-logo-badge">niagara</span>
+    <span class="otm-logo-badge">summit</span>
     <span class="otm-title">OTM Cloud PRODUCTION</span>
     <div class="otm-nav-icons">
       <span class="otm-nav-icon" onclick="navigateTo('dashboard')">🏠</span>
@@ -281,7 +281,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <span class="otm-nav-icon">🔔</span>
       <span class="otm-nav-icon">ⓘ</span>
     </div>
-    <div class="otm-user"><span id="searchUsername">UBER_FREIGHT_NIAGARA_ALL</span> <span style="font-size:10px;">▾</span></div>
+    <div class="otm-user"><span id="searchUsername">FREIGHT_SUMMIT_ALL</span> <span style="font-size:10px;">▾</span></div>
   </div>
   <div class="search-page-body">
     <div class="search-page-title">Online Booking/Tendering Finder</div>
@@ -394,7 +394,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="screen results-screen" id="screen-results" data-testid="screen-results">
   <div class="otm-nav">
     <span class="otm-hamburger">≡</span>
-    <span class="otm-logo-badge">niagara</span>
+    <span class="otm-logo-badge">summit</span>
     <span class="otm-title">OTM Cloud PRODUCTION</span>
     <div class="otm-nav-icons">
       <span class="otm-nav-icon" onclick="navigateTo('dashboard')">🏠</span>
@@ -404,7 +404,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <span class="otm-nav-icon">🔔</span>
       <span class="otm-nav-icon">ⓘ</span>
     </div>
-    <div class="otm-user"><span id="resultsUsername">UBER_FREIGHT_NIAGARA_ALL</span> <span style="font-size:10px;">▾</span></div>
+    <div class="otm-user"><span id="resultsUsername">FREIGHT_SUMMIT_ALL</span> <span style="font-size:10px;">▾</span></div>
   </div>
   <div class="results-page-body">
     <div class="results-header">
@@ -463,7 +463,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="screen detail-screen" id="screen-detail" data-testid="screen-detail">
   <div class="otm-nav">
     <span class="otm-hamburger">≡</span>
-    <span class="otm-logo-badge">niagara</span>
+    <span class="otm-logo-badge">summit</span>
     <span class="otm-title">OTM Cloud PRODUCTION</span>
     <div class="otm-nav-icons">
       <span class="otm-nav-icon" onclick="navigateTo('dashboard')">🏠</span>
@@ -473,7 +473,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <span class="otm-nav-icon">🔔</span>
       <span class="otm-nav-icon">ⓘ</span>
     </div>
-    <div class="otm-user"><span id="detailUsername">UBER_FREIGHT_NIAGARA_ALL</span> <span style="font-size:10px;">▾</span></div>
+    <div class="otm-user"><span id="detailUsername">FREIGHT_SUMMIT_ALL</span> <span style="font-size:10px;">▾</span></div>
   </div>
   <div class="detail-page-body">
     <div class="detail-header">
@@ -603,7 +603,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         </div>
         <div class="detail-row">
           <span class="detail-label">Carrier Name</span>
-          <span class="detail-value" id="detailCarrierName">Uber Freight</span>
+          <span class="detail-value" id="detailCarrierName">Freight Carrier Co</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Service Level</span>
@@ -674,7 +674,7 @@ const SHIPMENTS = [
     destAddress: '5600 Rosecrans Ave',
     destCity: 'Buena Park, CA 90621',
     scac: 'UBFT',
-    carrierName: 'Uber Freight',
+    carrierName: 'Freight Carrier Co',
     serviceLevel: 'Standard TL',
     rate: 850,
     weight: '42,000 lbs',
@@ -706,7 +706,7 @@ const SHIPMENTS = [
     destAddress: '1280 Foothill Blvd',
     destCity: 'La Cañada, CA 91011',
     scac: 'UBFT',
-    carrierName: 'Uber Freight',
+    carrierName: 'Freight Carrier Co',
     serviceLevel: 'Standard TL',
     rate: 720,
     weight: '38,000 lbs',
@@ -770,7 +770,7 @@ const SHIPMENTS = [
     destAddress: '1801 W 117th St',
     destCity: 'Los Angeles, CA 90047',
     scac: 'UBFT',
-    carrierName: 'Uber Freight',
+    carrierName: 'Freight Carrier Co',
     serviceLevel: 'Standard TL',
     rate: 1720,
     weight: '43,500 lbs',
@@ -834,7 +834,7 @@ const SHIPMENTS = [
     destAddress: '2900 Gateway Oaks Dr',
     destCity: 'Sacramento, CA 95833',
     scac: 'UBFT',
-    carrierName: 'Uber Freight',
+    carrierName: 'Freight Carrier Co',
     serviceLevel: 'Standard TL',
     rate: 680,
     weight: '41,000 lbs',
@@ -881,7 +881,7 @@ function showLastPass() {
 }
 
 function selectLastPassCred() {
-  document.getElementById('ssoUsername').value = 'UBER_FREIGHT_NIAGARA_ALL';
+  document.getElementById('ssoUsername').value = 'FREIGHT_SUMMIT_ALL';
   document.getElementById('ssoPassword').value = '••••••••••••';
   document.getElementById('ssoPassword').type = 'text';
   document.getElementById('ssoPassword').style.fontFamily = 'sans-serif';
@@ -890,7 +890,7 @@ function selectLastPassCred() {
   document.getElementById('ssoPassword').classList.remove('has-lastpass');
   document.getElementById('ssoUsername').style.background = '#fffde7';
   document.getElementById('ssoPassword').style.background = '#fffde7';
-  currentUser = 'UBER_FREIGHT_NIAGARA_ALL';
+  currentUser = 'FREIGHT_SUMMIT_ALL';
 }
 
 function ssoLogin() {
@@ -903,7 +903,7 @@ function ssoLogin() {
   }
   
   // Validate credentials (URFR or autofilled credential)
-  if (username.toLowerCase() === 'urfr' || username === 'UBER_FREIGHT_NIAGARA_ALL') {
+  if (username.toLowerCase() === 'urfr' || username === 'FREIGHT_SUMMIT_ALL') {
     const btn = document.getElementById('ssoSignIn');
     btn.textContent = 'Signing in...';
     btn.disabled = true;
@@ -911,7 +911,7 @@ function ssoLogin() {
     
     setTimeout(function() {
       // Update user display
-      currentUser = username === 'UBER_FREIGHT_NIAGARA_ALL' ? username : 'URFR';
+      currentUser = username === 'FREIGHT_SUMMIT_ALL' ? username : 'URFR';
       document.getElementById('otmUser').querySelector('#currentUsername').textContent = currentUser;
       document.getElementById('searchUsername').textContent = currentUser;
       document.getElementById('resultsUsername').textContent = currentUser;
