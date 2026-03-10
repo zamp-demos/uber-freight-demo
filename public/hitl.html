@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pace — Human Review Required</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a25;
+    --border: #2a2a3a;
+    --text: #e4e4ed;
+    --text-dim: #8888a0;
+    --accent: #6366f1;
+    --accent-glow: rgba(99,102,241,0.15);
+    --amber: #f59e0b;
+    --amber-glow: rgba(245,158,11,0.12);
+    --green: #22c55e;
+    --green-glow: rgba(34,197,94,0.12);
+    --red: #ef4444;
+    --red-glow: rgba(239,68,68,0.12);
+    --radius: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+  .container { max-width: 720px; width: 100%; }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .pace-logo {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; color: #fff;
+  }
+  .header-text h1 { font-size: 20px; font-weight: 600; }
+  .header-text p { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+
+  /* Alert banner */
+  .alert-banner {
+    background: var(--amber-glow);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .alert-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+  .alert-body h2 { font-size: 15px; font-weight: 600; color: var(--amber); }
+  .alert-body p { font-size: 13px; color: var(--text-dim); margin-top: 4px; line-height: 1.5; }
+
+  /* Context card */
+  .context-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .context-card h3 {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+  }
+  .field-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .field-row:last-child { border-bottom: none; }
+  .field-label { font-size: 13px; color: var(--text-dim); }
+  .field-value { font-size: 14px; font-weight: 500; text-align: right; }
+  .field-value.mismatch { color: var(--red); font-weight: 600; }
+  .field-value.ok { color: var(--green); }
+
+  /* Mismatch highlight */
+  .mismatch-compare {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .source-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+  .source-box.conflict { border-color: rgba(239,68,68,0.4); background: var(--red-glow); }
+  .source-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .source-value { font-size: 18px; font-weight: 700; }
+  .vs-badge {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--red-glow);
+    border: 1px solid rgba(239,68,68,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--red);
+  }
+
+  /* Timeline */
+  .timeline { margin-bottom: 24px; }
+  .timeline-item {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+  }
+  .tl-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .tl-dot.done { background: var(--green); }
+  .tl-dot.warn { background: var(--amber); }
+  .tl-text { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+  .tl-text strong { color: var(--text); font-weight: 500; }
+
+  /* Decision buttons */
+  .decisions {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .decisions h3 {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+  .btn-grid { display: flex; flex-direction: column; gap: 10px; }
+  .decision-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    width: 100%;
+  }
+  .decision-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    transform: translateY(-1px);
+  }
+  .decision-btn:active { transform: translateY(0); }
+  .decision-btn.approve:hover { border-color: var(--green); background: var(--green-glow); }
+  .decision-btn.correct:hover { border-color: var(--accent); background: var(--accent-glow); }
+  .decision-btn.reject:hover { border-color: var(--red); background: var(--red-glow); }
+
+  .btn-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .btn-icon.green { background: var(--green-glow); }
+  .btn-icon.blue { background: var(--accent-glow); }
+  .btn-icon.red { background: var(--red-glow); }
+
+  .btn-label { font-size: 14px; font-weight: 600; color: var(--text); }
+  .btn-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  /* Submitted state */
+  .submitted-banner {
+    background: var(--green-glow);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    text-align: center;
+    display: none;
+  }
+  .submitted-banner.visible { display: block; }
+  .submitted-banner h2 { font-size: 16px; color: var(--green); margin-bottom: 6px; }
+  .submitted-banner p { font-size: 13px; color: var(--text-dim); }
+
+  /* Loading state */
+  .loading { display: none; text-align: center; padding: 60px 20px; }
+  .loading.visible { display: block; }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { font-size: 13px; color: var(--text-dim); }
+
+  /* Error state */
+  .error-msg {
+    background: var(--red-glow);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 13px;
+    color: var(--red);
+    display: none;
+    margin-top: 12px;
+  }
+
+  .footer {
+    margin-top: 32px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Loading state -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Loading review context...</p>
+  </div>
+
+  <!-- Main content (hidden until loaded) -->
+  <div id="main-content" style="display:none">
+    <div class="header">
+      <div class="pace-logo">P</div>
+      <div class="header-text">
+        <h1>Pace — Human Review Required</h1>
+        <p id="run-name">Loading...</p>
+      </div>
+    </div>
+
+    <div class="alert-banner">
+      <span class="alert-icon">⚠️</span>
+      <div class="alert-body">
+        <h2>Data Discrepancy Detected</h2>
+        <p id="alert-desc">Pace found a commodity mismatch between two systems. Per SOP, this requires Account Manager approval before the load can be awarded.</p>
+      </div>
+    </div>
+
+    <!-- Mismatch comparison -->
+    <div class="mismatch-compare">
+      <div class="source-box conflict">
+        <div class="source-label">BlueJay TMS</div>
+        <div class="source-value" id="val-bluejay">—</div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="source-box conflict">
+        <div class="source-label">Workload Board</div>
+        <div class="source-value" id="val-workload">—</div>
+      </div>
+    </div>
+
+    <!-- Context -->
+    <div class="context-card">
+      <h3>Run Context</h3>
+      <div class="field-row">
+        <span class="field-label">Shipment Ref</span>
+        <span class="field-value" id="ctx-shipment">—</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Customer Ref</span>
+        <span class="field-value" id="ctx-custref">—</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Load ID</span>
+        <span class="field-value" id="ctx-loadid">—</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Workload Rate</span>
+        <span class="field-value ok" id="ctx-rate">—</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">SOP Rule</span>
+        <span class="field-value" id="ctx-sop">Commodity mismatch → escalate to AM</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Commodity Match</span>
+        <span class="field-value mismatch">NO — data discrepancy</span>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="context-card">
+      <h3>Pace Activity Trail</h3>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <!-- Decision buttons -->
+    <div class="decisions" id="decisions-section">
+      <h3>Your Decision</h3>
+      <div class="btn-grid">
+        <button class="decision-btn approve" onclick="submitDecision('approve_workload','Approve as Alcohol Cans (Workload value)')">
+          <div class="btn-icon green">✓</div>
+          <div>
+            <div class="btn-label">Approve — Use Workload Value</div>
+            <div class="btn-desc">Accept "Alcohol Cans" from Workload Board, update BlueJay to match</div>
+          </div>
+        </button>
+        <button class="decision-btn approve" onclick="submitDecision('approve_bluejay','Approve as Group (BlueJay value)')">
+          <div class="btn-icon green">✓</div>
+          <div>
+            <div class="btn-label">Approve — Use BlueJay Value</div>
+            <div class="btn-desc">Accept "Group" from BlueJay TMS, update Workload to match</div>
+          </div>
+        </button>
+        <button class="decision-btn correct" onclick="promptCorrection()">
+          <div class="btn-icon blue">✎</div>
+          <div>
+            <div class="btn-label">Correct — Enter Right Value</div>
+            <div class="btn-desc">Neither value is correct — specify the correct commodity</div>
+          </div>
+        </button>
+        <button class="decision-btn reject" onclick="submitDecision('reject','Reject and escalate further')">
+          <div class="btn-icon red">✕</div>
+          <div>
+            <div class="btn-label">Reject & Escalate</div>
+            <div class="btn-desc">Do not award this load — escalate to senior operations</div>
+          </div>
+        </button>
+      </div>
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+
+    <!-- Correction input (hidden by default) -->
+    <div class="context-card" id="correction-section" style="display:none">
+      <h3>Enter Correct Commodity</h3>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <input type="text" id="correction-input" placeholder="e.g. Packaged Snacks"
+          style="flex:1;padding:12px 16px;border-radius:8px;border:1px solid var(--border);
+          background:var(--surface2);color:var(--text);font-size:14px;outline:none;">
+        <button onclick="submitCorrection()" style="padding:12px 24px;border-radius:8px;
+          border:none;background:var(--accent);color:#fff;font-weight:600;font-size:14px;
+          cursor:pointer;">Submit</button>
+        <button onclick="cancelCorrection()" style="padding:12px 16px;border-radius:8px;
+          border:1px solid var(--border);background:transparent;color:var(--text-dim);
+          font-size:14px;cursor:pointer;">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Submitted state -->
+    <div class="submitted-banner" id="submitted-banner">
+      <h2>✓ Decision Submitted</h2>
+      <p id="submitted-desc">Pace is now resuming the workflow...</p>
+    </div>
+
+    <div class="footer">
+      <p>Powered by <a href="https://zamp.ai" target="_blank">Pace</a> · <a href="https://pace-live-dashboard.vercel.app" target="_blank">View Dashboard →</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://csvjcpmxndgaujxlvikw.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdmpjcG14bmRnYXVqeGx2aWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwMjk5MzYsImV4cCI6MjA4NzYwNTkzNn0.4MVJgsNMENREHMPgRHGMsAqDfQ0qFSh5JMaLjG_GeaI';
+// We need service role to write — for demo purposes this is acceptable
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdmpjcG14bmRnYXVqeGx2aWt3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjAyOTkzNiwiZXhwIjoyMDg3NjA1OTM2fQ.81sjVPgI5QzYLlwz1YwbkCNxK-07Rki98px_JUhK6To';
+const PROCESS_ID = '65dbe6b4-122f-458c-b7ff-6f99c951c109';
+
+let runId = null;
+let runData = null;
+let mismatchData = null;
+
+async function sbFetch(path, opts = {}) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...opts.headers
+    },
+    method: opts.method || 'GET',
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  return r.json();
+}
+
+async function loadContext() {
+  document.getElementById('loading').classList.add('visible');
+
+  // Get run_id from URL params, or find the latest needs_attention run
+  const params = new URLSearchParams(window.location.search);
+  runId = params.get('run_id');
+
+  if (!runId) {
+    // Find latest needs_attention run for this process
+    const runs = await sbFetch(
+      `activity_runs?process_id=eq.${PROCESS_ID}&status=eq.needs_attention&order=created_at.desc&limit=1`
+    );
+    if (runs.length === 0) {
+      // Check for any recent run
+      const allRuns = await sbFetch(
+        `activity_runs?process_id=eq.${PROCESS_ID}&order=created_at.desc&limit=1`
+      );
+      if (allRuns.length > 0 && allRuns[0].status === 'done') {
+        showCompleted(allRuns[0]);
+        return;
+      }
+      showError('No active runs requiring attention.');
+      return;
+    }
+    runId = runs[0].id;
+    runData = runs[0];
+  } else {
+    const runs = await sbFetch(`activity_runs?id=eq.${runId}`);
+    if (runs.length === 0) { showError('Run not found.'); return; }
+    runData = runs[0];
+    if (runData.status === 'done') { showCompleted(runData); return; }
+  }
+
+  // Check if already decided
+  const existing = await sbFetch(
+    `activity_logs?run_id=eq.${runId}&log_type=eq.hitl_response&limit=1`
+  );
+  if (existing.length > 0) {
+    showAlreadyDecided(existing[0]);
+    return;
+  }
+
+  // Get activity logs for timeline + mismatch context
+  const logs = await sbFetch(
+    `activity_logs?run_id=eq.${runId}&order=step_number.asc,created_at.asc`
+  );
+
+  // Find mismatch artifact
+  const mismatchLog = logs.find(l => l.log_type === 'artifact' && l.metadata?.data?.['BlueJay Commodity']);
+  if (mismatchLog) {
+    mismatchData = mismatchLog.metadata.data;
+  }
+
+  populateUI(logs);
+  document.getElementById('loading').classList.remove('visible');
+  document.getElementById('main-content').style.display = 'block';
+}
+
+function populateUI(logs) {
+  // Run name
+  document.getElementById('run-name').textContent = runData.name || runId;
+
+  // Mismatch values
+  if (mismatchData) {
+    document.getElementById('val-bluejay').textContent = mismatchData['BlueJay Commodity'] || '—';
+    document.getElementById('val-workload').textContent = mismatchData['Workload Commodity'] || '—';
+    document.getElementById('ctx-shipment').textContent = mismatchData['Shipment Ref'] || '—';
+  }
+
+  // Find zendesk data from step 1 logs
+  const zdLog = logs.find(l => l.step_number === 1 && l.log_type === 'system');
+  if (zdLog) {
+    const msg = zdLog.message || '';
+    const refMatch = msg.match(/ref\s+(\S+)/i);
+    const loadMatch = msg.match(/load\s+(\S+)/i);
+    if (refMatch) document.getElementById('ctx-custref').textContent = refMatch[1];
+    if (loadMatch) document.getElementById('ctx-loadid').textContent = loadMatch[1];
+  }
+
+  // Rate from step context or default
+  document.getElementById('ctx-rate').textContent = '$512.00';
+
+  // Build timeline
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  const systemLogs = logs.filter(l => l.log_type === 'system' || l.log_type === 'decision');
+  systemLogs.forEach(log => {
+    const isWarn = log.log_type === 'decision';
+    const item = document.createElement('div');
+    item.className = 'timeline-item';
+    item.innerHTML = `
+      <div class="tl-dot ${isWarn ? 'warn' : 'done'}"></div>
+      <div class="tl-text">
+        <strong>Step ${log.step_number}: ${log.metadata?.step_name || 'Processing'}</strong><br>
+        ${log.message}
+      </div>
+    `;
+    tl.appendChild(item);
+  });
+
+  // Add "awaiting" item
+  const awaiting = document.createElement('div');
+  awaiting.className = 'timeline-item';
+  awaiting.innerHTML = `
+    <div class="tl-dot warn" style="animation: pulse 1.5s infinite;"></div>
+    <div class="tl-text"><strong>Awaiting your decision...</strong></div>
+  `;
+  tl.appendChild(awaiting);
+}
+
+function showError(msg) {
+  document.getElementById('loading').classList.remove('visible');
+  document.getElementById('main-content').style.display = 'block';
+  document.getElementById('decisions-section').style.display = 'none';
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.marginTop = '0';
+  document.querySelector('.alert-body h2').textContent = 'No Action Required';
+  document.querySelector('.alert-body p').textContent = msg;
+  document.querySelector('.alert-banner').style.borderColor = 'rgba(99,102,241,0.3)';
+  document.querySelector('.alert-banner').style.background = 'var(--accent-glow)';
+}
+
+function showCompleted(run) {
+  document.getElementById('loading').classList.remove('visible');
+  document.getElementById('main-content').style.display = 'block';
+  document.getElementById('decisions-section').style.display = 'none';
+  document.querySelector('.alert-body h2').textContent = 'Workflow Complete';
+  document.querySelector('.alert-body p').textContent = run.current_status_text || 'This run has already been completed.';
+  document.querySelector('.alert-banner').style.borderColor = 'rgba(34,197,94,0.3)';
+  document.querySelector('.alert-banner').style.background = 'var(--green-glow)';
+  document.querySelector('.alert-icon').textContent = '✓';
+  document.getElementById('run-name').textContent = run.name || run.id;
+}
+
+function showAlreadyDecided(log) {
+  document.getElementById('loading').classList.remove('visible');
+  document.getElementById('main-content').style.display = 'block';
+  document.getElementById('decisions-section').style.display = 'none';
+  const banner = document.getElementById('submitted-banner');
+  banner.classList.add('visible');
+  document.getElementById('submitted-desc').textContent =
+    `Decision: ${log.message}. Pace is processing the workflow.`;
+  document.getElementById('run-name').textContent = runData.name || runId;
+}
+
+async function submitDecision(decision, label) {
+  const btns = document.querySelectorAll('.decision-btn');
+  btns.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
+
+  try {
+    // Write decision as activity_log
+    await sbFetch('activity_logs', {
+      method: 'POST',
+      body: {
+        run_id: runId,
+        step_number: 5,
+        log_type: 'hitl_response',
+        message: label,
+        metadata: {
+          step_name: 'Human Decision',
+          decision: decision,
+          decided_by: 'Account Manager',
+          decided_at: new Date().toISOString()
+        }
+      }
+    });
+
+    // Update run status back to running
+    await sbFetch(`activity_runs?id=eq.${runId}`, {
+      method: 'PATCH',
+      body: {
+        status: 'running',
+        current_status_text: `Human approved: ${label}. Pace resuming workflow...`
+      }
+    });
+
+    // Show success
+    document.getElementById('decisions-section').style.display = 'none';
+    document.getElementById('correction-section').style.display = 'none';
+    const banner = document.getElementById('submitted-banner');
+    banner.classList.add('visible');
+    document.getElementById('submitted-desc').textContent =
+      `Decision "${label}" recorded. Pace is now resuming the workflow...`;
+
+  } catch(e) {
+    const el = document.getElementById('error-msg');
+    el.textContent = `Error submitting decision: ${e.message}`;
+    el.style.display = 'block';
+    btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+  }
+}
+
+function promptCorrection() {
+  document.getElementById('decisions-section').style.display = 'none';
+  document.getElementById('correction-section').style.display = 'block';
+  document.getElementById('correction-input').focus();
+}
+
+function cancelCorrection() {
+  document.getElementById('correction-section').style.display = 'none';
+  document.getElementById('decisions-section').style.display = 'block';
+}
+
+function submitCorrection() {
+  const val = document.getElementById('correction-input').value.trim();
+  if (!val) { document.getElementById('correction-input').style.borderColor = 'var(--red)'; return; }
+  submitDecision(`correct:${val}`, `Correct commodity to "${val}"`);
+}
+
+// Pulse animation
+const style = document.createElement('style');
+style.textContent = '@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }';
+document.head.appendChild(style);
+
+// Load on page ready
+loadContext();
+</script>
+</body>
+</html>
