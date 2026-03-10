@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pace — SOP Setup</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;background:#f5f6f8;color:#1a1a1a;min-height:100vh;display:flex;}
+
+/* Sidebar */
+.sidebar{width:220px;background:#1a1a2e;color:#fff;display:flex;flex-direction:column;min-height:100vh;padding:24px 0;}
+.sidebar .brand{padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:16px;}
+.sidebar .brand-text{font-size:13px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;}
+.sidebar .brand-name{font-size:20px;font-weight:700;margin-top:4px;letter-spacing:-0.3px;}
+.sidebar .nav-section{padding:0 12px;margin-bottom:8px;}
+.sidebar .nav-label{font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;padding:8px 8px 6px;}
+.sidebar .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;font-size:13px;color:rgba(255,255,255,0.7);cursor:pointer;transition:all 0.15s;}
+.sidebar .nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
+.sidebar .nav-item.active{background:rgba(255,255,255,0.1);color:#fff;font-weight:600;}
+.sidebar .nav-icon{font-size:16px;width:20px;text-align:center;}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow-y:auto;}
+.topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
+.topbar h1{font-size:18px;font-weight:700;color:#111;}
+.topbar .subtitle{font-size:13px;color:#6b7280;margin-top:2px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#16a34a;}
+
+.content{padding:32px;max-width:720px;}
+
+/* Form */
+.form-group{margin-bottom:24px;}
+.form-label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;letter-spacing:0.01em;}
+.form-hint{font-size:12px;color:#9ca3af;margin-bottom:6px;}
+.form-select,.form-input{width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111;background:#fff;transition:border-color 0.2s,box-shadow 0.2s;}
+.form-select:focus,.form-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+.form-input.password{font-family:monospace;letter-spacing:1px;}
+.form-textarea{width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;color:#111;background:#fff;min-height:180px;line-height:1.7;resize:vertical;font-family:inherit;transition:border-color 0.2s,box-shadow 0.2s;}
+.form-textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+/* Trigger button */
+.trigger-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 28px;background:#171717;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:8px;}
+.trigger-btn:hover{background:#333;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+.trigger-btn:active{transform:translateY(0);}
+.trigger-btn .btn-icon{font-size:16px;}
+.trigger-btn .spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;}
+.trigger-btn.running .btn-icon{display:none;}
+.trigger-btn.running .spinner{display:inline-block;}
+.trigger-btn.running{background:#374151;pointer-events:none;}
+.trigger-btn.success{background:#16a34a;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#171717;color:#fff;padding:14px 20px;border-radius:8px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,0.25);z-index:9999;display:none;max-width:400px;line-height:1.5;}
+.toast.visible{display:block;animation:slideUp 0.3s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+/* Divider */
+.divider{border:none;border-top:1px solid #e5e7eb;margin:8px 0 24px;}
+
+/* Pre-filled indicator */
+.prefilled{position:relative;}
+.prefilled::after{content:'Pre-filled';position:absolute;top:10px;right:12px;font-size:10px;font-weight:600;color:#2563eb;background:#eff6ff;padding:2px 8px;border-radius:10px;}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="brand">
+    <div class="brand-text">Pace by Zamp</div>
+    <div class="brand-name">SOP Setup</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Configuration</div>
+    <div class="nav-item active"><span class="nav-icon">⚙️</span> Process Setup</div>
+    <div class="nav-item"><span class="nav-icon">📋</span> SOP Editor</div>
+    <div class="nav-item"><span class="nav-icon">🔑</span> Credentials</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">History</div>
+    <div class="nav-item"><span class="nav-icon">▶️</span> Recent Runs</div>
+    <div class="nav-item"><span class="nav-icon">📊</span> Analytics</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1>Process Configuration</h1>
+      <div class="subtitle">Set up a new automated process — pick a customer, connect portals, write SOP steps, and run.</div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-badge"><span class="status-dot"></span> Ready</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Customer -->
+    <div class="form-group">
+      <label class="form-label">Customer</label>
+      <div class="form-hint">Select the customer account this process applies to.</div>
+      <select class="form-select" id="customerSelect" data-testid="customer-select">
+        <option value="">— Select customer —</option>
+        <option value="summit_foods" selected>Summit Foods</option>
+        <option value="acme_packaging">Acme Packaging</option>
+        <option value="atlas_beverages">Atlas Beverages</option>
+      </select>
+    </div>
+
+    <!-- Portal URL -->
+    <div class="form-group">
+      <label class="form-label">Target Portal</label>
+      <div class="form-hint">The external system Pace will drive via browser agent.</div>
+      <select class="form-select" id="portalSelect" data-testid="portal-select">
+        <option value="">— Select portal —</option>
+        <option value="bluejay" selected>BlueJay TMS (e2open)</option>
+        <option value="zendesk">Zendesk Support</option>
+        <option value="workload">Uber Freight Workload Board</option>
+        <option value="sap_ariba">SAP Ariba (coming soon)</option>
+      </select>
+      <input class="form-input" id="portalUrl" data-testid="portal-url" value="https://tms.e2open.com/bluejay/sso" placeholder="Portal URL" style="margin-top:8px;" />
+    </div>
+
+    <hr class="divider">
+
+    <!-- Credentials -->
+    <div class="form-group">
+      <label class="form-label">Portal Credentials</label>
+      <div class="form-hint">Pace uses these to authenticate via SSO or direct login.</div>
+      <div class="row-2">
+        <div class="prefilled">
+          <input class="form-input" id="credUsername" data-testid="cred-username" value="pace-agent@uber.com" placeholder="Username" />
+        </div>
+        <div class="prefilled">
+          <input class="form-input password" id="credPassword" data-testid="cred-password" type="password" value="••••••••••••" placeholder="Password" />
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- SOP -->
+    <div class="form-group">
+      <label class="form-label">SOP Steps</label>
+      <div class="form-hint">Write the process steps in plain English. Pace will follow these exactly.</div>
+      <textarea class="form-textarea" id="sopText" data-testid="sop-text" placeholder="Write your SOP steps here...">1. Open Zendesk ticket queue — find the load prep ticket for the customer.
+2. Extract the Customer Ref and Load ID from the ticket properties.
+3. Log into BlueJay TMS using SSO credentials.
+4. Search for the shipment using the Customer Ref from step 2.
+5. Extract the commodity classification from BlueJay shipment details.
+6. Compare BlueJay commodity against Workload Board commodity.
+7. If mismatch → flag for human review (Needs Attention).
+8. After human decision → update Workload Board with correct commodity.
+9. Award the load and set status to Awarded.
+10. Return to Zendesk — add resolution note, apply macro, mark Solved.</textarea>
+    </div>
+
+    <!-- Trigger -->
+    <button class="trigger-btn" id="triggerBtn" data-testid="trigger-btn" onclick="triggerRun()">
+      <span class="btn-icon">▶</span>
+      <span class="spinner"></span>
+      <span class="btn-label">Run Process</span>
+    </button>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Toast ── */
+function showToast(msg, duration) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('visible'), duration || 4000);
+}
+
+/* ── Trigger Run ── */
+function triggerRun() {
+  const btn = document.getElementById('triggerBtn');
+  const customer = document.getElementById('customerSelect').value;
+  const portal = document.getElementById('portalSelect').value;
+  const url = document.getElementById('portalUrl').value;
+  const user = document.getElementById('credUsername').value;
+  const sop = document.getElementById('sopText').value.trim();
+
+  if (!customer) { showToast('Please select a customer.'); return; }
+  if (!portal) { showToast('Please select a target portal.'); return; }
+  if (!sop) { showToast('Please enter SOP steps.'); return; }
+
+  btn.classList.add('running');
+  btn.querySelector('.btn-label').textContent = 'Running…';
+  document.querySelector('.status-badge').innerHTML = '<span class="status-dot" style="background:#f59e0b;"></span> Running';
+  document.querySelector('.status-badge').style.background = '#fffbeb';
+  document.querySelector('.status-badge').style.color = '#d97706';
+  document.querySelector('.status-badge').style.borderColor = '#fde68a';
+
+  showToast('Process triggered — Pace is starting the workflow…');
+
+  setTimeout(() => {
+    btn.classList.remove('running');
+    btn.classList.add('success');
+    btn.querySelector('.btn-label').textContent = 'Process Started ✓';
+    btn.querySelector('.btn-icon').textContent = '✓';
+    document.querySelector('.status-badge').innerHTML = '<span class="status-dot" style="background:#2563eb;"></span> In Progress';
+    document.querySelector('.status-badge').style.background = '#eff6ff';
+    document.querySelector('.status-badge').style.color = '#2563eb';
+    document.querySelector('.status-badge').style.borderColor = '#bfdbfe';
+    showToast('Process started successfully. Track progress on the Pace Dashboard.', 5000);
+    setTimeout(() => { btn.classList.remove('success'); btn.querySelector('.btn-label').textContent = 'Run Process'; btn.querySelector('.btn-icon').textContent = '▶'; }, 4000);
+  }, 3000);
+}
+
+/* ── Portal URL auto-fill ── */
+const PORTAL_URLS = {
+  bluejay: 'https://tms.e2open.com/bluejay/sso',
+  zendesk: 'https://uberfreight.zendesk.com/agent',
+  workload: 'https://freight.uber.com/workload',
+  sap_ariba: 'https://service.ariba.com/Sourcing.do'
+};
+document.getElementById('portalSelect').addEventListener('change', function() {
+  document.getElementById('portalUrl').value = PORTAL_URLS[this.value] || '';
+});
+
+/* ══════════════════════════════════════════
+   PLAYWRIGHT HELPERS — window.triggerX pattern
+   ══════════════════════════════════════════ */
+
+window.triggerSelectCustomer = function(value) {
+  const sel = document.getElementById('customerSelect');
+  sel.value = value;
+  sel.dispatchEvent(new Event('change'));
+  showToast('Customer set to ' + sel.options[sel.selectedIndex].text);
+  return { success: true, customer: value };
+};
+
+window.triggerSelectPortal = function(value) {
+  const sel = document.getElementById('portalSelect');
+  sel.value = value;
+  sel.dispatchEvent(new Event('change'));
+  showToast('Portal set to ' + sel.options[sel.selectedIndex].text);
+  return { success: true, portal: value, url: PORTAL_URLS[value] || '' };
+};
+
+window.triggerSetPortalUrl = function(url) {
+  document.getElementById('portalUrl').value = url;
+  showToast('Portal URL set');
+  return { success: true, url: url };
+};
+
+window.triggerSetCredentials = function(username, password) {
+  document.getElementById('credUsername').value = username;
+  document.getElementById('credPassword').value = password;
+  showToast('Credentials set for ' + username);
+  return { success: true, username: username };
+};
+
+window.triggerSetSOP = function(text) {
+  document.getElementById('sopText').value = text;
+  showToast('SOP updated (' + text.split('\n').length + ' steps)');
+  return { success: true, lines: text.split('\n').length };
+};
+
+window.triggerRun = function() {
+  triggerRun();
+  return { success: true, message: 'Process triggered' };
+};
+
+window.triggerGetConfig = function() {
+  return {
+    customer: document.getElementById('customerSelect').value,
+    portal: document.getElementById('portalSelect').value,
+    portal_url: document.getElementById('portalUrl').value,
+    username: document.getElementById('credUsername').value,
+    sop: document.getElementById('sopText').value,
+    sop_lines: document.getElementById('sopText').value.split('\n').length
+  };
+};
+</script>
+</body>
+</html>
