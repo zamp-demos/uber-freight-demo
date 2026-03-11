@@ -55,13 +55,14 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .sop-section{grid-column:1/-1;margin-top:4px;}
 .sop-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:24px;}
 .sop-card .card-header{margin-bottom:12px;}
+.sop-edit-hint{font-size:11px;color:#80868b;font-weight:400;margin-left:8px;}
 
 /* SOP table */
 .sop-table{width:100%;border-collapse:collapse;font-size:13px;}
 .sop-table th{text-align:left;padding:10px 12px;background:#f8f9fa;color:#5f6368;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e0e0e0;}
 .sop-table td{padding:10px 12px;border-bottom:1px solid #f1f3f4;color:#3c4043;vertical-align:top;line-height:1.5;}
 .sop-table tr:last-child td{border-bottom:none;}
-.sop-table tr:hover{background:#f8f9fa;}
+.sop-table tr:hover{background:#fafcff;}
 .sop-step-num{font-weight:700;color:#1a73e8;font-size:12px;}
 .sop-substeps{margin:4px 0 0;padding-left:16px;font-size:12px;color:#5f6368;line-height:1.6;}
 .sop-action-chip{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:500;margin-right:4px;}
@@ -69,6 +70,32 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .chip-validate{background:#fef3e0;color:#c8962e;}
 .chip-decision{background:#fce8e6;color:#d93025;}
 .chip-extract{background:#e6f4ea;color:#0d904f;}
+
+/* Editable SOP cells */
+.sop-editable{outline:none;border-radius:4px;padding:2px 4px;margin:-2px -4px;transition:background .15s,box-shadow .15s;}
+.sop-editable:hover{background:#f0f4ff;}
+.sop-editable:focus{background:#fff;box-shadow:0 0 0 2px rgba(26,115,232,.2);}
+.sop-title-edit{font-weight:600;font-size:13px;display:block;margin-bottom:4px;}
+.sop-detail-edit{display:block;font-size:13px;color:#3c4043;}
+.sop-substep-edit{font-size:12px;color:#5f6368;}
+
+/* Action type selector inline */
+.sop-type-select{border:1px solid transparent;background:transparent;font-size:11px;font-weight:500;padding:3px 6px;border-radius:4px;cursor:pointer;outline:none;transition:border .15s;}
+.sop-type-select:hover{border-color:#dadce0;}
+.sop-type-select:focus{border-color:#1a73e8;}
+.sop-type-select option{font-size:12px;}
+
+/* Row controls */
+.sop-row-controls{display:flex;gap:4px;opacity:0;transition:opacity .15s;justify-content:center;align-items:center;}
+.sop-table tr:hover .sop-row-controls{opacity:1;}
+.sop-row-btn{width:24px;height:24px;border:none;background:transparent;color:#80868b;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .1s;padding:0;}
+.sop-row-btn:hover{background:#f1f3f4;color:#d93025;}
+.sop-row-btn.move:hover{color:#1a73e8;}
+.sop-row-btn svg{width:14px;height:14px;}
+
+/* Add step button */
+.sop-add-step{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;margin-top:8px;border:2px dashed #dadce0;border-radius:8px;background:transparent;color:#5f6368;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;}
+.sop-add-step:hover{border-color:#1a73e8;color:#1a73e8;background:#f8faff;}
 
 /* Trigger section */
 .trigger-section{grid-column:1/-1;margin-top:4px;}
@@ -96,11 +123,10 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .p-step.done .p-step-dot{background:#0d904f;}
 .p-step.active .p-step-dot{background:#1a73e8;animation:pulse 1.2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 .footer{text-align:center;margin-top:32px;font-size:12px;color:#80868b;}
 .footer a{color:#1a73e8;text-decoration:none;}
-
-/* SOP empty state */
 .sop-empty{text-align:center;padding:40px 20px;color:#80868b;font-size:14px;}
 </style>
 </head>
@@ -112,7 +138,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
 <div class="container">
   <h1>Workflow Configuration</h1>
-  <p class="subtitle">Select a client and ticket, configure BluJay access, review the SOP, then trigger the Pace agent.</p>
+  <p class="subtitle">Select a client and ticket, configure BluJay access, review and edit the SOP, then trigger the Pace agent.</p>
 
   <div class="grid">
     <!-- STEP 1: Client & Ticket Selection -->
@@ -168,12 +194,13 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
       </div>
     </div>
 
-    <!-- STEP 3: SOP Preview (full width) -->
+    <!-- STEP 3: SOP Preview (full width, editable) -->
     <div class="sop-section">
       <div class="sop-card">
         <div class="card-header">
           <div class="step-badge">3</div>
           <div class="card-title">SOP Preview</div>
+          <span class="sop-edit-hint">✏️ Click any cell to edit</span>
           <span id="sopClientLabel" style="margin-left:auto;font-size:12px;color:#5f6368;font-weight:500;"></span>
         </div>
         <div id="sopContent">
@@ -190,8 +217,8 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
           <div class="card-title">Run Workflow</div>
         </div>
         <p style="font-size:13px;color:#5f6368;max-width:500px;margin:0 auto;">
-          Pace will open the BluJay portal, search for the shipment, extract data, cross-reference against the workload,
-          and either complete the process or escalate for human review.
+          Pace will execute the SOP steps above — open BluJay, search the shipment, extract data, cross-reference the workload,
+          and either complete or escalate based on the rules you've configured.
         </p>
         <button id="triggerBtn" class="trigger-btn" onclick="triggerWorkflow()" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -238,88 +265,57 @@ const TICKETS = [
   }
 ];
 
-// ─── SOP DEFINITIONS ───
-const SOP_STANDARD = [
-  {
-    step: 1, title: 'Open Zendesk & Retrieve Ticket',
-    action: 'browser',
-    detail: 'Navigate to Zendesk portal. Locate the assigned ticket by ticket ID. Extract: customer reference number, load ID, origin, destination, commodity type, priority level.',
-    substeps: ['Open Zendesk portal URL','Search for ticket by ID','Extract all shipment metadata from ticket body']
-  },
-  {
-    step: 2, title: 'Log into BluJay TMS',
-    action: 'browser',
-    detail: 'Open the configured BluJay portal URL. Enter credentials (username + password). Verify successful login by confirming the dashboard loads.',
-    substeps: ['Navigate to BluJay URL','Enter username and password','Confirm dashboard is visible']
-  },
-  {
-    step: 3, title: 'Search Shipment in BluJay',
-    action: 'browser',
-    detail: 'Use the shipment search to find the record by customer reference number (PO/Ref). Verify the shipment exists and is in a processable status.',
-    substeps: ['Enter customer ref in search field','Execute search','Verify shipment found and status is valid']
-  },
-  {
-    step: 4, title: 'Extract Shipment Data from BluJay',
-    action: 'extract',
-    detail: 'From the shipment record, extract: carrier, rate, commodity, origin/destination, equipment type, pickup/delivery windows, weight, quantity.',
-    substeps: ['Open shipment detail view','Extract all required fields','Store extracted data for validation']
-  },
-  {
-    step: 5, title: 'Cross-Reference Against Workload',
-    action: 'validate',
-    detail: 'Open the Workload portal. Find the matching load by load ID. Compare commodity, route, and rate between BluJay shipment and Workload record.',
-    substeps: ['Open Workload portal','Search for load by ID','Compare commodity fields for match','Compare origin/destination','Compare rate if available']
-  },
-  {
-    step: 6, title: 'Determine Outcome',
-    action: 'decision',
-    detail: 'If all fields match → mark as verified and complete the ticket. If any mismatch is found (especially commodity) → escalate to human reviewer with mismatch details.',
-    substeps: ['Evaluate match results','If MATCH: complete ticket, log success','If MISMATCH: flag for HITL review with details']
-  }
-];
+// ─── SOP STEP TEMPLATES (mutable — used as initial state, then edited in-page) ───
+function getStandardSOP() {
+  return [
+    { step:1, title:'Open Zendesk & Retrieve Ticket', action:'browser',
+      detail:'Navigate to Zendesk portal. Locate the assigned ticket by ticket ID. Extract: customer reference number, load ID, origin, destination, commodity type, priority level.',
+      substeps:['Open Zendesk portal URL','Search for ticket by ID','Extract all shipment metadata from ticket body'] },
+    { step:2, title:'Log into BluJay TMS', action:'browser',
+      detail:'Open the configured BluJay portal URL. Enter credentials (username + password). Verify successful login by confirming the dashboard loads.',
+      substeps:['Navigate to BluJay URL','Enter username and password','Confirm dashboard is visible'] },
+    { step:3, title:'Search Shipment in BluJay', action:'browser',
+      detail:'Use the shipment search to find the record by customer reference number (PO/Ref). Verify the shipment exists and is in a processable status.',
+      substeps:['Enter customer ref in search field','Execute search','Verify shipment found and status is valid'] },
+    { step:4, title:'Extract Shipment Data from BluJay', action:'extract',
+      detail:'From the shipment record, extract: carrier, rate, commodity, origin/destination, equipment type, pickup/delivery windows, weight, quantity.',
+      substeps:['Open shipment detail view','Extract all required fields','Store extracted data for validation'] },
+    { step:5, title:'Cross-Reference Against Workload', action:'validate',
+      detail:'Open the Workload portal. Find the matching load by load ID. Compare commodity, route, and rate between BluJay shipment and Workload record.',
+      substeps:['Open Workload portal','Search for load by ID','Compare commodity fields for match','Compare origin/destination','Compare rate if available'] },
+    { step:6, title:'Determine Outcome', action:'decision',
+      detail:'If all fields match → mark as verified and complete the ticket. If any mismatch is found (especially commodity) → escalate to human reviewer with mismatch details.',
+      substeps:['Evaluate match results','If MATCH: complete ticket, log success','If MISMATCH: flag for HITL review with details'] }
+  ];
+}
 
-const SOP_NONSTANDARD = [
-  {
-    step: 1, title: 'Open Zendesk & Retrieve Ticket',
-    action: 'browser',
-    detail: 'Navigate to Zendesk portal. Locate the assigned ticket by ticket ID. Extract all shipment metadata. Flag ticket priority — High priority tickets require enhanced validation.',
-    substeps: ['Open Zendesk portal URL','Search for ticket by ID','Extract shipment metadata','Note priority level for routing']
-  },
-  {
-    step: 2, title: 'Log into BluJay TMS',
-    action: 'browser',
-    detail: 'Open the configured BluJay portal URL. Enter credentials. Verify successful login. For non-standard flows, confirm access to advanced shipment details.',
-    substeps: ['Navigate to BluJay URL','Enter credentials','Confirm advanced access available']
-  },
-  {
-    step: 3, title: 'Search & Extract Shipment',
-    action: 'extract',
-    detail: 'Search by customer reference. Extract full shipment record including carrier allocation, spot bid status, temperature control requirements, and fuel surcharge.',
-    substeps: ['Search by customer ref','Extract standard fields','Extract extended fields (spot bid, temp control, fuel surcharge)']
-  },
-  {
-    step: 4, title: 'Cross-Reference Against Workload (Enhanced)',
-    action: 'validate',
-    detail: 'Open Workload portal. Find matching load. Perform enhanced validation: commodity match, route match, rate comparison, and check for any override flags or special handling instructions.',
-    substeps: ['Open Workload portal','Search for load by ID','Compare commodity (exact match required)','Compare route origin/destination','Compare rate and flag variance > 10%','Check for special handling flags']
-  },
-  {
-    step: 5, title: 'Commodity Mismatch Detection',
-    action: 'decision',
-    detail: 'If commodity between BluJay and Workload does not match exactly, this is a critical mismatch. Do NOT auto-resolve. Immediately escalate to human reviewer with full context.',
-    substeps: ['Compare BluJay commodity vs Workload commodity','If EXACT MATCH: proceed to completion','If MISMATCH: halt automation, escalate to HITL']
-  },
-  {
-    step: 6, title: 'HITL Escalation or Completion',
-    action: 'decision',
-    detail: 'For mismatches: create "Needs Attention" flag in Pace dashboard with both commodity values, shipment details, and recommended action. For matches: mark ticket as verified and complete.',
-    substeps: ['If escalation: post to Pace dashboard with mismatch details','If escalation: include BluJay value, Workload value, shipment ref','If completion: update ticket status to Resolved','Log outcome in audit trail']
-  }
-];
+function getNonStandardSOP() {
+  return [
+    { step:1, title:'Open Zendesk & Retrieve Ticket', action:'browser',
+      detail:'Navigate to Zendesk portal. Locate the assigned ticket by ticket ID. Extract all shipment metadata. Flag ticket priority — High priority tickets require enhanced validation.',
+      substeps:['Open Zendesk portal URL','Search for ticket by ID','Extract shipment metadata','Note priority level for routing'] },
+    { step:2, title:'Log into BluJay TMS', action:'browser',
+      detail:'Open the configured BluJay portal URL. Enter credentials. Verify successful login. For non-standard flows, confirm access to advanced shipment details.',
+      substeps:['Navigate to BluJay URL','Enter credentials','Confirm advanced access available'] },
+    { step:3, title:'Search & Extract Shipment', action:'extract',
+      detail:'Search by customer reference. Extract full shipment record including carrier allocation, spot bid status, temperature control requirements, and fuel surcharge.',
+      substeps:['Search by customer ref','Extract standard fields','Extract extended fields (spot bid, temp control, fuel surcharge)'] },
+    { step:4, title:'Cross-Reference Against Workload (Enhanced)', action:'validate',
+      detail:'Open Workload portal. Find matching load. Perform enhanced validation: commodity match, route match, rate comparison, and check for any override flags or special handling instructions.',
+      substeps:['Open Workload portal','Search for load by ID','Compare commodity (exact match required)','Compare route origin/destination','Compare rate and flag variance > 10%','Check for special handling flags'] },
+    { step:5, title:'Commodity Mismatch Detection', action:'decision',
+      detail:'If commodity between BluJay and Workload does not match exactly, this is a critical mismatch. Do NOT auto-resolve. Immediately escalate to human reviewer with full context.',
+      substeps:['Compare BluJay commodity vs Workload commodity','If EXACT MATCH: proceed to completion','If MISMATCH: halt automation, escalate to HITL'] },
+    { step:6, title:'HITL Escalation or Completion', action:'decision',
+      detail:'For mismatches: create "Needs Attention" flag in Pace dashboard with both commodity values, shipment details, and recommended action. For matches: mark ticket as verified and complete.',
+      substeps:['If escalation: post to Pace dashboard with mismatch details','If escalation: include BluJay value, Workload value, shipment ref','If completion: update ticket status to Resolved','Log outcome in audit trail'] }
+  ];
+}
 
 // ─── STATE ───
 let selectedUI = 'classic';
 let selectedTicket = null;
+let currentSOPSteps = []; // live editable state
 
 // ─── EVENT HANDLERS ───
 function onClientChange() {
@@ -330,6 +326,7 @@ function onClientChange() {
   detailsDiv.classList.remove('visible');
   detailsDiv.innerHTML = '';
   selectedTicket = null;
+  currentSOPSteps = [];
   updateTriggerBtn();
 
   if (!clientKey) {
@@ -353,6 +350,7 @@ function onTicketChange() {
   if (!ticketId) {
     detailsDiv.classList.remove('visible');
     selectedTicket = null;
+    currentSOPSteps = [];
     updateTriggerBtn();
     renderSOP(null);
     return;
@@ -372,6 +370,11 @@ function onTicketChange() {
     <div class="td-row"><span class="td-label">Priority</span><span class="td-value ${prioClass}">${t.priority}</span></div>
   `;
   detailsDiv.classList.add('visible');
+
+  // Initialize live SOP from template
+  const isNonStandard = t.sopAccount === 'pepsi' && t.priority === 'High';
+  currentSOPSteps = isNonStandard ? getNonStandardSOP() : getStandardSOP();
+
   updateTriggerBtn();
   renderSOP(t);
 }
@@ -382,16 +385,14 @@ function toggleUI(btn) {
   selectedUI = btn.dataset.ui;
 
   const urlEl = document.getElementById('bluejayUrl');
-  if (selectedUI === 'classic') {
-    urlEl.textContent = 'https://uber-freight-demo.vercel.app/bluejay-portal.html';
-  } else {
-    urlEl.textContent = 'https://uber-freight-demo.vercel.app/bluejay-portal-newUi.html';
-  }
+  urlEl.textContent = selectedUI === 'classic'
+    ? 'https://uber-freight-demo.vercel.app/bluejay-portal.html'
+    : 'https://uber-freight-demo.vercel.app/bluejay-portal-newUi.html';
 
   if (selectedTicket) renderSOP(selectedTicket);
 }
 
-// ─── SOP RENDERING ───
+// ─── SOP RENDERING (EDITABLE) ───
 function renderSOP(ticket) {
   const container = document.getElementById('sopContent');
   const label = document.getElementById('sopClientLabel');
@@ -402,60 +403,109 @@ function renderSOP(ticket) {
     return;
   }
 
-  // Choose SOP based on ticket: Summit Foods (pepsi account) with High priority = non-standard
   const isNonStandard = ticket.sopAccount === 'pepsi' && ticket.priority === 'High';
-  const steps = isNonStandard ? SOP_NONSTANDARD : SOP_STANDARD;
   const uiLabel = selectedUI === 'classic' ? 'Classic UI' : 'New UI';
   const sopType = isNonStandard ? 'Non-Standard (HITL)' : 'Standard';
-
   label.textContent = `${ticket.customer} · ${sopType} · BluJay ${uiLabel}`;
 
-  const chipMap = {
-    browser: '<span class="sop-action-chip chip-browser">🌐 Browser</span>',
-    extract: '<span class="sop-action-chip chip-extract">📋 Extract</span>',
-    validate: '<span class="sop-action-chip chip-validate">✓ Validate</span>',
-    decision: '<span class="sop-action-chip chip-decision">⚡ Decision</span>'
-  };
+  const bjUrl = selectedUI === 'classic' ? 'bluejay-portal.html' : 'bluejay-portal-newUi.html';
+  const typeOpts = ['browser','extract','validate','decision'];
+  const typeLabels = {browser:'🌐 Browser',extract:'📋 Extract',validate:'✓ Validate',decision:'⚡ Decision'};
 
-  // Build the BluJay URL that the agent will use
-  const bjUrl = selectedUI === 'classic'
-    ? 'bluejay-portal.html'
-    : 'bluejay-portal-newUi.html';
+  let html = '<table class="sop-table"><thead><tr><th style="width:44px">#</th><th style="width:110px">Type</th><th>Action</th><th style="width:80px"></th></tr></thead><tbody>';
 
-  let html = '<table class="sop-table"><thead><tr><th style="width:50px">Step</th><th style="width:100px">Type</th><th>Action</th></tr></thead><tbody>';
-
-  steps.forEach(s => {
-    // Dynamically inject ticket-specific values into the detail text
+  currentSOPSteps.forEach((s, i) => {
     let detail = s.detail
-      .replace(/ticket ID/gi, `ticket <strong>${ticket.id}</strong>`)
-      .replace(/customer reference number/gi, `customer ref <strong>${ticket.ref}</strong>`)
-      .replace(/customer ref/gi, `customer ref <strong>${ticket.ref}</strong>`)
-      .replace(/load ID/gi, `load ID <strong>${ticket.loadId}</strong>`);
-
-    // Inject BluJay URL context for login step
+      .replace(/ticket ID/gi, `ticket ${ticket.id}`)
+      .replace(/customer reference number/gi, `customer ref ${ticket.ref}`)
+      .replace(/customer ref(?! \w)/gi, `customer ref ${ticket.ref}`)
+      .replace(/load ID/gi, `load ID ${ticket.loadId}`);
     if (s.title.includes('Log into BluJay')) {
-      detail = detail.replace(/BluJay portal URL/gi, `BluJay ${uiLabel} (<code>${bjUrl}</code>)`);
+      detail = detail.replace(/BluJay portal URL/gi, `BluJay ${uiLabel} (${bjUrl})`);
     }
 
-    const subHtml = s.substeps
-      ? '<ul class="sop-substeps">' + s.substeps.map(ss => `<li>${ss}</li>`).join('') + '</ul>'
+    const optHtml = typeOpts.map(t =>
+      `<option value="${t}"${s.action===t?' selected':''}>${typeLabels[t]}</option>`
+    ).join('');
+
+    const subHtml = s.substeps && s.substeps.length
+      ? '<ul class="sop-substeps">' + s.substeps.map((ss, si) =>
+          `<li><span class="sop-substep-edit sop-editable" contenteditable="true" data-idx="${i}" data-si="${si}" onblur="syncSubstepEdit(this)">${ss}</span></li>`
+        ).join('') + '</ul>'
       : '';
 
-    html += `<tr>
+    html += `<tr data-idx="${i}">
       <td><span class="sop-step-num">${s.step}</span></td>
-      <td>${chipMap[s.action] || ''}</td>
-      <td><strong>${s.title}</strong><br>${detail}${subHtml}</td>
+      <td><select class="sop-type-select" onchange="changeStepType(${i},this.value)">${optHtml}</select></td>
+      <td>
+        <span class="sop-title-edit sop-editable" contenteditable="true" data-idx="${i}" data-field="title" onblur="syncEdit(this)">${s.title}</span>
+        <span class="sop-detail-edit sop-editable" contenteditable="true" data-idx="${i}" data-field="detail" onblur="syncEdit(this)">${detail}</span>
+        ${subHtml}
+      </td>
+      <td><div class="sop-row-controls">
+        <button class="sop-row-btn move" onclick="moveStep(${i},-1)" title="Move up">↑</button>
+        <button class="sop-row-btn move" onclick="moveStep(${i},1)" title="Move down">↓</button>
+        <button class="sop-row-btn" onclick="deleteStep(${i})" title="Delete">✕</button>
+      </div></td>
     </tr>`;
   });
 
   html += '</tbody></table>';
+  html += '<button class="sop-add-step" onclick="addStep()">+ Add Step</button>';
   container.innerHTML = html;
 }
 
-// ─── TRIGGER BUTTON STATE ───
+// ─── EDIT HELPERS ───
+function syncEdit(el) {
+  const idx = parseInt(el.dataset.idx);
+  const field = el.dataset.field;
+  if (currentSOPSteps[idx]) currentSOPSteps[idx][field] = el.textContent.trim();
+}
+
+function syncSubstepEdit(el) {
+  const idx = parseInt(el.dataset.idx);
+  const si = parseInt(el.dataset.si);
+  if (currentSOPSteps[idx] && currentSOPSteps[idx].substeps[si] !== undefined) {
+    currentSOPSteps[idx].substeps[si] = el.textContent.trim();
+  }
+}
+
+function changeStepType(idx, val) {
+  if (currentSOPSteps[idx]) { currentSOPSteps[idx].action = val; }
+}
+
+function moveStep(idx, dir) {
+  const target = idx + dir;
+  if (target < 0 || target >= currentSOPSteps.length) return;
+  const tmp = currentSOPSteps[idx];
+  currentSOPSteps[idx] = currentSOPSteps[target];
+  currentSOPSteps[target] = tmp;
+  renumberSteps();
+  renderSOP(selectedTicket);
+}
+
+function deleteStep(idx) {
+  if (currentSOPSteps.length <= 1) return;
+  currentSOPSteps.splice(idx, 1);
+  renumberSteps();
+  renderSOP(selectedTicket);
+}
+
+function addStep() {
+  const n = currentSOPSteps.length + 1;
+  currentSOPSteps.push({ step:n, title:'New Step', action:'browser', detail:'Describe what the agent should do in this step.', substeps:['Sub-step 1'] });
+  renderSOP(selectedTicket);
+  // Scroll to bottom of SOP
+  const table = document.querySelector('.sop-table');
+  if (table) table.lastElementChild.lastElementChild.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function renumberSteps() {
+  currentSOPSteps.forEach((s, i) => { s.step = i + 1; });
+}
+
 function updateTriggerBtn() {
-  const btn = document.getElementById('triggerBtn');
-  btn.disabled = !selectedTicket;
+  document.getElementById('triggerBtn').disabled = !selectedTicket;
 }
 
 // ─── TRIGGER WORKFLOW ───
@@ -469,65 +519,47 @@ async function triggerWorkflow() {
   btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Running…';
   statusDiv.classList.add('visible');
 
-  const bjUrl = selectedUI === 'classic'
-    ? 'https://uber-freight-demo.vercel.app/bluejay-portal.html'
-    : 'https://uber-freight-demo.vercel.app/bluejay-portal-newUi.html';
-  const uiLabel = selectedUI === 'classic' ? 'Classic UI' : 'New UI';
   const isHITL = t.priority === 'High' && t.sopAccount === 'pepsi';
 
-  const steps = [
-    { label: 'Opening Zendesk', detail: `Navigating to Zendesk portal, locating ticket ${t.id}…` },
-    { label: 'Reading Ticket', detail: `Extracting metadata — Ref: ${t.ref}, Load: ${t.loadId}, Route: ${t.origin} → ${t.dest}, Commodity: ${t.commodity}` },
-    { label: 'Logging into BluJay', detail: `Opening BluJay ${uiLabel} at ${bjUrl}. Entering credentials for FREIGHT_SUMMIT_ALL…` },
-    { label: 'Searching Shipment', detail: `Searching BluJay for customer ref ${t.ref}…` },
-    { label: 'Extracting Data', detail: `Found shipment. Extracting carrier, rate, commodity, route, equipment, pickup/delivery windows…` },
-    { label: 'Cross-Referencing', detail: `Opening Workload portal. Searching for load ${t.loadId}. Comparing commodity and route…` }
-  ];
+  // Build progress from the EDITED SOP steps
+  const steps = currentSOPSteps.map(s => ({ label: s.title, detail: s.detail }));
 
+  // Append outcome steps
   if (isHITL) {
-    steps.push({ label: 'Mismatch Detected', detail: `⚠️ Commodity mismatch — BluJay: PACKAGED SNACKS vs Workload: Frozen Foods. Escalating to human reviewer.` });
-    steps.push({ label: 'HITL Escalation', detail: `Created "Needs Attention" flag in Pace dashboard. Ticket ${t.id} requires manual review. Workflow paused.` });
+    steps.push({ label:'Mismatch Detected', detail:'⚠️ Commodity mismatch — BluJay: PACKAGED SNACKS vs Workload: Frozen Foods. Escalating to human reviewer.' });
+    steps.push({ label:'HITL Escalation', detail:`Created "Needs Attention" flag in Pace dashboard. Ticket ${t.id} requires manual review.` });
   } else {
-    steps.push({ label: 'Validation Passed', detail: `✓ All fields match. Commodity: ${t.commodity}. Route confirmed. Rate verified.` });
-    steps.push({ label: 'Completing', detail: `Marking ticket ${t.id} as verified. Updating status to Resolved. Logging audit trail.` });
+    steps.push({ label:'Validation Passed', detail:`✓ All fields match. Commodity: ${t.commodity}. Route confirmed.` });
+    steps.push({ label:'Completing', detail:`Marking ticket ${t.id} as verified. Updating status to Resolved.` });
   }
 
-  // Render progress
   statusDiv.innerHTML = '<div class="progress-steps">' +
-    steps.map((s, i) => `<div class="p-step" id="pstep${i}"><div class="p-step-dot"></div>${s.label}</div>`).join('') +
+    steps.map((s,i) => `<div class="p-step" id="pstep${i}"><div class="p-step-dot"></div>${s.label}</div>`).join('') +
     '</div><div id="stepDetail" class="status-msg running" style="margin-top:12px;text-align:center;"></div>';
 
-  // Animate through steps
   for (let i = 0; i < steps.length; i++) {
     const el = document.getElementById(`pstep${i}`);
     el.classList.add('active');
     document.getElementById('stepDetail').textContent = steps[i].detail;
     document.getElementById('stepDetail').className = 'status-msg running';
-
-    await sleep(1800 + Math.random() * 1200);
-
+    await sleep(1500 + Math.random() * 1000);
     el.classList.remove('active');
     el.classList.add('done');
   }
 
-  // Final status
   if (isHITL) {
-    document.getElementById('stepDetail').innerHTML = '⚠️ <strong>Workflow paused — Needs Attention.</strong> Commodity mismatch requires human review in Pace Dashboard.';
+    document.getElementById('stepDetail').innerHTML = '⚠️ <strong>Workflow paused — Needs Attention.</strong> Commodity mismatch requires human review.';
     document.getElementById('stepDetail').className = 'status-msg error';
   } else {
-    document.getElementById('stepDetail').innerHTML = '✅ <strong>Workflow complete.</strong> Ticket verified and resolved. All fields matched successfully.';
+    document.getElementById('stepDetail').innerHTML = '✅ <strong>Workflow complete.</strong> Ticket verified and resolved.';
     document.getElementById('stepDetail').className = 'status-msg success';
   }
 
-  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4l-6.5 17L10 14 3 17.5 1 10l22-6z"/></svg> Run Again';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Again';
   btn.disabled = false;
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
-
-<style>
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-</style>
 </body>
 </html>
