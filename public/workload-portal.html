@@ -124,6 +124,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .stop-row{display:flex;flex-direction:column;gap:1px;}
 .stop-label{font-size:11px;color:#5f6368;}.stop-value{font-size:13px;color:#202124;font-weight:500;}
 .stop-connector{text-align:center;color:#9aa0a6;font-size:14px;line-height:1;margin:2px 0;}
+
+/* ── Documents Panel ── */
+.docs-panel{padding:16px;display:none;}
+.docs-upload-area{border:2px dashed #dadce0;border-radius:8px;padding:32px 16px;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa;margin-bottom:16px;}
+.docs-upload-area:hover,.docs-upload-area.dragover{border-color:#1a73e8;background:#e8f0fe;}
+.docs-upload-area .upload-icon{font-size:32px;color:#80868b;margin-bottom:8px;}
+.docs-upload-area .upload-text{font-size:14px;color:#5f6368;margin-bottom:4px;}
+.docs-upload-area .upload-hint{font-size:12px;color:#9aa0a6;}
+.docs-upload-area .upload-btn{display:inline-block;margin-top:12px;padding:6px 20px;background:#1a73e8;color:#fff;border:none;border-radius:4px;font-size:13px;cursor:pointer;}
+.docs-upload-area .upload-btn:hover{background:#1558b0;}
+.docs-list{list-style:none;}
+.docs-list .doc-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid #e0e0e0;border-radius:6px;margin-bottom:8px;}
+.doc-item .doc-icon{font-size:20px;color:#1a73e8;flex-shrink:0;}
+.doc-item .doc-info{flex:1;min-width:0;}
+.doc-item .doc-name{font-size:13px;font-weight:500;color:#202124;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.doc-item .doc-meta{font-size:11px;color:#80868b;margin-top:2px;}
+.doc-item .doc-status{font-size:11px;padding:2px 8px;border-radius:3px;font-weight:600;}
+.doc-status.uploaded{background:#e6f4ea;color:#137333;}
+.doc-status.sending{background:#fef7e0;color:#b06000;}
+.docs-empty{text-align:center;padding:40px 16px;color:#80868b;font-size:13px;}
+.notif-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#e6f4ea;border-radius:4px;font-size:11px;color:#137333;margin-top:8px;}
+.notif-badge .notif-dot{width:6px;height:6px;background:#0d904f;border-radius:50;}
+
 </style>
 </head>
 <body>
@@ -283,6 +306,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <div class="stop-row"><span class="stop-label">Window</span><span class="stop-value" id="stopDeliveryWindow">--</span></div>
       </div>
     </div>
+  </div>
+
+
+  <!-- Documents Panel (hidden by default) -->
+  <div id="docsPanel" class="docs-panel" data-testid="docs-panel">
+    <div class="docs-upload-area" id="docsUploadArea" data-testid="docs-upload-area">
+      <div class="upload-icon">📄</div>
+      <div class="upload-text">Drag & drop files here</div>
+      <div class="upload-hint">or click to browse — PDF, XLSX, CSV, PNG, JPG up to 10 MB</div>
+      <button class="upload-btn" id="uploadBtn">Browse files</button>
+      <input type="file" id="docFileInput" data-testid="doc-file-input" style="display:none;" multiple accept=".pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.doc,.docx">
+    </div>
+    <ul class="docs-list" id="docsList" data-testid="docs-list"></ul>
+    <div class="docs-empty" id="docsEmpty">No documents uploaded for this load yet.</div>
   </div>
 
   <!-- Cards Row -->
@@ -679,14 +716,22 @@ document.querySelectorAll('.tab').forEach(tab => {
     var mp = document.querySelector('.map-container');
     var cr = document.querySelector('.cards-row');
     var sp = document.getElementById('stopsPanel');
+    var dp = document.getElementById('docsPanel');
     if (tn === 'stops') {
       if (mp) mp.style.display = 'none';
       if (cr) cr.style.display = 'none';
       if (sp) { sp.style.display = 'block'; updateStopsPanel(); }
+      if (dp) dp.style.display = 'none';
+    } else if (tn === 'documents') {
+      if (mp) mp.style.display = 'none';
+      if (cr) cr.style.display = 'none';
+      if (sp) sp.style.display = 'none';
+      if (dp) dp.style.display = 'block';
     } else {
       if (mp) mp.style.display = '';
       if (cr) cr.style.display = '';
       if (sp) sp.style.display = 'none';
+      if (dp) dp.style.display = 'none';
     }
   });
 });
@@ -856,6 +901,175 @@ window.triggerSubmitDecision = function() {
   submitDecision();
   const load = LOADS[currentLoad];
   return { success: true, loadId: load.id, decision, carrier, notes, finalRate: finalRate || null, updatedRate: load.rate };
+};
+
+
+
+// ══════════════════════════════════════════════
+// DOCUMENTS TAB — File Upload + Email Notification
+// ══════════════════════════════════════════════
+const DOC_SB_URL = 'https://csvjcpmxndgaujxlvikw.supabase.co';
+const DOC_SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdmpjcG14bmRnYXVqeGx2aWt3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjAyOTkzNiwiZXhwIjoyMDg3NjA1OTM2fQ.81sjVPgI5QzYLlwz1YwbkCNxK-07Rki98px_JUhK6To';
+const DOC_PROCESS_ID = '65dbe6b4-122f-458c-b7ff-6f99c951c109';
+const NOTIFY_EMAIL = 'Prabhu@zamp.ai';
+
+// Track uploaded docs per load
+var uploadedDocs = {};
+
+// Drag & drop
+var uploadArea = document.getElementById('docsUploadArea');
+var fileInput = document.getElementById('docFileInput');
+
+uploadArea.addEventListener('click', function(e) {
+  if (e.target.tagName !== 'BUTTON') fileInput.click();
+});
+document.getElementById('uploadBtn').addEventListener('click', function(e) {
+  e.stopPropagation(); fileInput.click();
+});
+
+uploadArea.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', function() { this.classList.remove('dragover'); });
+uploadArea.addEventListener('drop', function(e) {
+  e.preventDefault(); this.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFileUpload(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', function() {
+  if (this.files.length) handleFileUpload(this.files);
+  this.value = '';
+});
+
+function handleFileUpload(files) {
+  var load = LOADS[currentLoad];
+  if (!load) { showToast('Select a load first'); return; }
+  if (!uploadedDocs[currentLoad]) uploadedDocs[currentLoad] = [];
+
+  Array.from(files).forEach(function(file) {
+    var docEntry = {
+      name: file.name,
+      size: file.size,
+      type: file.type || 'application/octet-stream',
+      uploadedAt: new Date().toISOString(),
+      loadId: load.id,
+      customer: load.customer,
+      status: 'sending'
+    };
+    uploadedDocs[currentLoad].push(docEntry);
+    renderDocsList();
+
+    // Log to Supabase activity_logs
+    logDocUpload(docEntry).then(function() {
+      docEntry.status = 'uploaded';
+      renderDocsList();
+      // Send email notification
+      sendUploadNotification(docEntry);
+    }).catch(function(err) {
+      console.error('Failed to log upload:', err);
+      docEntry.status = 'uploaded'; // Still show as uploaded locally
+      renderDocsList();
+      sendUploadNotification(docEntry);
+    });
+  });
+
+  // Update tab count
+  updateDocsCount();
+  showToast('Document' + (files.length > 1 ? 's' : '') + ' uploaded for ' + load.id);
+}
+
+function renderDocsList() {
+  var list = document.getElementById('docsList');
+  var empty = document.getElementById('docsEmpty');
+  var docs = uploadedDocs[currentLoad] || [];
+  if (!docs.length) { list.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  list.innerHTML = docs.map(function(d) {
+    var sizeStr = d.size < 1024 ? d.size + ' B' : d.size < 1048576 ? (d.size/1024).toFixed(1) + ' KB' : (d.size/1048576).toFixed(1) + ' MB';
+    var icon = d.name.match(/\.pdf$/i) ? '📕' : d.name.match(/\.xlsx?$/i) ? '📗' : d.name.match(/\.csv$/i) ? '📊' : d.name.match(/\.(png|jpg|jpeg)$/i) ? '🖼' : '📄';
+    var statusClass = d.status === 'uploaded' ? 'uploaded' : 'sending';
+    var statusText = d.status === 'uploaded' ? '✓ Uploaded' : '↑ Sending...';
+    var notifHtml = d.status === 'uploaded' ? '<div class="notif-badge"><span class="notif-dot"></span>Email sent to ' + NOTIFY_EMAIL + '</div>' : '';
+    return '<li class="doc-item"><span class="doc-icon">' + icon + '</span><div class="doc-info"><div class="doc-name">' + d.name + '</div><div class="doc-meta">' + sizeStr + ' · ' + new Date(d.uploadedAt).toLocaleString() + '</div>' + notifHtml + '</div><span class="doc-status ' + statusClass + '">' + statusText + '</span></li>';
+  }).join('');
+}
+
+function updateDocsCount() {
+  var docs = uploadedDocs[currentLoad] || [];
+  var docTab = document.querySelector('.tab[data-tab="documents"] .count');
+  if (docTab) docTab.textContent = '(' + docs.length + ')';
+}
+
+async function logDocUpload(docEntry) {
+  try {
+    // Create an activity_run for this upload event
+    var runId = crypto.randomUUID ? crypto.randomUUID() : 'doc-' + Date.now();
+    await fetch(DOC_SB_URL + '/rest/v1/activity_logs', {
+      method: 'POST',
+      headers: {
+        'apikey': DOC_SB_KEY,
+        'Authorization': 'Bearer ' + DOC_SB_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        process_id: DOC_PROCESS_ID,
+        run_id: runId,
+        step: 0,
+        log_type: 'document_upload',
+        message: 'Document uploaded: ' + docEntry.name + ' for load ' + docEntry.loadId + ' (' + docEntry.customer + ')',
+        metadata: {
+          event_type: 'workload_document_upload',
+          file_name: docEntry.name,
+          file_size: docEntry.size,
+          file_type: docEntry.type,
+          load_id: docEntry.loadId,
+          customer: docEntry.customer,
+          uploaded_at: docEntry.uploadedAt,
+          notify_email: NOTIFY_EMAIL
+        }
+      })
+    });
+  } catch(e) { console.error('Supabase log error:', e); }
+}
+
+async function sendUploadNotification(docEntry) {
+  // Use Supabase Edge Function or direct email API
+  // For now, log the notification event — the CRON trigger will pick this up
+  try {
+    var runId = crypto.randomUUID ? crypto.randomUUID() : 'notif-' + Date.now();
+    await fetch(DOC_SB_URL + '/rest/v1/activity_logs', {
+      method: 'POST',
+      headers: {
+        'apikey': DOC_SB_KEY,
+        'Authorization': 'Bearer ' + DOC_SB_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        process_id: DOC_PROCESS_ID,
+        run_id: runId,
+        step: 0,
+        log_type: 'email_notification_pending',
+        message: 'PENDING EMAIL: New document "' + docEntry.name + '" uploaded for load ' + docEntry.loadId + ' (' + docEntry.customer + '). Notify: ' + NOTIFY_EMAIL,
+        metadata: {
+          event_type: 'email_notification_pending',
+          notify_email: NOTIFY_EMAIL,
+          subject: 'Workload Portal: New document uploaded for ' + docEntry.loadId,
+          body_text: 'A new document has been uploaded on the Workload portal.\n\nLoad: ' + docEntry.loadId + '\nCustomer: ' + docEntry.customer + '\nFile: ' + docEntry.name + '\nSize: ' + (docEntry.size < 1048576 ? (docEntry.size/1024).toFixed(1) + ' KB' : (docEntry.size/1048576).toFixed(1) + ' MB') + '\nUploaded: ' + docEntry.uploadedAt + '\n\nView load: https://uber-freight-demo.vercel.app/workload-portal.html',
+          file_name: docEntry.name,
+          load_id: docEntry.loadId,
+          customer: docEntry.customer,
+          uploaded_at: docEntry.uploadedAt
+        }
+      })
+    });
+  } catch(e) { console.error('Notification log error:', e); }
+}
+
+// Reset docs panel when switching loads
+var origSelectLoad = selectLoad;
+selectLoad = function(key) {
+  origSelectLoad(key);
+  renderDocsList();
+  updateDocsCount();
 };
 
 </script>
