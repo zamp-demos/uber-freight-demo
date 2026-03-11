@@ -114,6 +114,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .toast.show{opacity:1;}
 /* Edit indicator */
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+.stops-panel{padding:16px;}.stop-card{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:14px 16px;margin-bottom:4px;}
+.stop-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;}
+.stop-icon{font-size:10px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;}
+.pickup-icon{background:#1a73e8;}.delivery-icon{background:#d93025;}
+.stop-type{font-weight:600;font-size:13px;color:#202124;}
+.stop-details{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;}
+.stop-row{display:flex;flex-direction:column;gap:1px;}
+.stop-label{font-size:11px;color:#5f6368;}.stop-value{font-size:13px;color:#202124;font-weight:500;}
+.stop-connector{text-align:center;color:#9aa0a6;font-size:14px;line-height:1;margin:2px 0;}
 </style>
 </head>
 <body>
@@ -239,6 +249,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="map-zoom">
       <button>+</button>
       <button>−</button>
+    </div>
+  </div>
+
+  <!-- Stops Panel (hidden by default) -->
+  <div id="stopsPanel" class="stops-panel" style="display:none;" data-testid="stops-panel">
+    <div class="stop-card">
+      <div class="stop-header"><span class="stop-icon pickup-icon">▲</span><span class="stop-type">Pickup (Stop 1)</span><span class="stop-appt-type" id="stopPickupType" style="margin-left:auto;font-size:11px;color:#5f6368;">--</span></div>
+      <div class="stop-details">
+        <div class="stop-row"><span class="stop-label">Facility</span><span class="stop-value" id="stopPickupName">--</span></div>
+        <div class="stop-row"><span class="stop-label">Address</span><span class="stop-value" id="stopPickupAddress">--</span></div>
+        <div class="stop-row"><span class="stop-label">City</span><span class="stop-value" id="stopPickupCity">--</span></div>
+        <div class="stop-row"><span class="stop-label">Date</span><span class="stop-value" id="stopPickupDate">--</span></div>
+        <div class="stop-row"><span class="stop-label">Appt time</span><span class="stop-value" id="stopPickupTime">--</span></div>
+        <div class="stop-row"><span class="stop-label">Window</span><span class="stop-value" id="stopPickupWindow">--</span></div>
+      </div>
+    </div>
+    <div class="stop-connector">▼</div>
+    <div class="stop-card">
+      <div class="stop-header"><span class="stop-icon delivery-icon">▼</span><span class="stop-type">Delivery (Stop 2)</span><span class="stop-appt-type" id="stopDeliveryType" style="margin-left:auto;font-size:11px;color:#5f6368;">--</span></div>
+      <div class="stop-details">
+        <div class="stop-row"><span class="stop-label">Facility</span><span class="stop-value" id="stopDeliveryName">--</span></div>
+        <div class="stop-row"><span class="stop-label">Address</span><span class="stop-value" id="stopDeliveryAddress">--</span></div>
+        <div class="stop-row"><span class="stop-label">City</span><span class="stop-value" id="stopDeliveryCity">--</span></div>
+        <div class="stop-row"><span class="stop-label">Date</span><span class="stop-value" id="stopDeliveryDate">--</span></div>
+        <div class="stop-row"><span class="stop-label">Appt time</span><span class="stop-value" id="stopDeliveryTime">--</span></div>
+        <div class="stop-row"><span class="stop-label">Window</span><span class="stop-value" id="stopDeliveryWindow">--</span></div>
+      </div>
     </div>
   </div>
 
@@ -385,6 +422,10 @@ const LOADS = {
     equipment: "Van (53')", notes: 'PO KTD IS REQUIRED',
     rate: '$512.00', carrierCost: '$445.00', margin: '$67.00 (13.1%)',
     targetMargin: '12.0%', infoText: 'Contract Primary — Acme Packaging account. PO KTD IS REQUIRED.',
+    stops: {
+      pickup: { name: 'Acme Packaging Warehouse', address: '3100 Industrial Blvd', city: 'Fairfield, CA 94534', date: '03/10/2026', time: '08:00 PT', window: '08:00 - 12:00 PT', type: 'Live Unload' },
+      delivery: { name: 'Acme West Coast DC', address: '7200 Power Inn Rd', city: 'Sacramento, CA 95828', date: '03/10/2026', time: '14:00 PT', window: '13:00 - 17:00 PT', type: 'Drop Trailer' }
+    },
     map: {
       land: 'M40,20 L200,15 L260,40 L300,80 L320,140 L340,200 L320,280 L240,290 L180,260 L120,200 L60,140 L30,80 Z',
       route: {x1:145,y1:105,x2:195,y2:90},
@@ -401,6 +442,10 @@ const LOADS = {
     equipment: "Reefer (53')", notes: 'DELIVERY APPOINTMENT REQUIRED',
     rate: '$680.00', carrierCost: '$595.00', margin: '$85.00 (12.5%)',
     targetMargin: '11.0%', infoText: 'Spot load — Atlas Beverages. DELIVERY APPOINTMENT REQUIRED.',
+    stops: {
+      pickup: { name: 'Atlas Beverages Plant', address: '1600 S Archibald Ave', city: 'Ontario, CA 91761', date: '03/09/2026', time: '09:00 PT', window: '09:00 - 13:00 PT', type: 'Live Load' },
+      delivery: { name: 'Atlas Phoenix Distribution', address: '4020 E Van Buren St', city: 'Phoenix, AZ 85008', date: '03/09/2026', time: '18:00 PT', window: '16:00 - 20:00 PT', type: 'Drop Trailer' }
+    },
     map: {
       land: 'M20,40 L180,30 L250,50 L320,100 L380,80 L440,100 L500,140 L520,200 L480,260 L400,280 L300,270 L200,240 L120,200 L60,140 L20,80 Z',
       route: {x1:140,y1:160,x2:400,y2:130},
@@ -417,6 +462,10 @@ const LOADS = {
     equipment: "Van (53')", notes: '',
     rate: '$395.00', carrierCost: '$340.00', margin: '$55.00 (13.9%)',
     targetMargin: '13.0%', infoText: 'Contract Primary — Summit Foods account.',
+    stops: {
+      pickup: { name: 'Summit Foods Distribution', address: '2400 Distribution Pkwy', city: 'Dallas, TX 75212', date: '03/08/2026', time: '11:00 PT', window: '11:00 - 15:00 PT', type: 'Live Load' },
+      delivery: { name: 'HEB Distribution Center', address: '4800 San Jacinto St', city: 'Houston, TX 77004', date: '03/08/2026', time: '18:00 PT', window: '16:00 - 20:00 PT', type: 'Drop Trailer' }
+    },
     map: {
       land: 'M60,20 L200,15 L350,20 L500,40 L560,100 L580,180 L560,260 L480,290 L340,280 L200,260 L100,200 L40,120 Z',
       route: {x1:250,y1:130,x2:340,y2:200},
@@ -488,6 +537,12 @@ function selectLoad(key) {
   // Clear RHS final rate when switching loads
   document.getElementById('finalRate').value = '';
   document.getElementById('finalRateSource').textContent = '';
+
+  // Reset to Overview tab
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelector('.tab[data-tab="overview"]').classList.add('active');
+  var mr=document.querySelector('.map-container'),crs=document.querySelector('.cards-row'),sps=document.getElementById('stopsPanel');
+  if(mr)mr.style.display='';if(crs)crs.style.display='';if(sps)sps.style.display='none';
 
   showToast(`Loaded ${load.customer} — ${load.id}`);
 }
@@ -594,6 +649,19 @@ document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', function() {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     this.classList.add('active');
+    var tn = this.getAttribute('data-tab');
+    var mp = document.querySelector('.map-container');
+    var cr = document.querySelector('.cards-row');
+    var sp = document.getElementById('stopsPanel');
+    if (tn === 'stops') {
+      if (mp) mp.style.display = 'none';
+      if (cr) cr.style.display = 'none';
+      if (sp) { sp.style.display = 'block'; updateStopsPanel(); }
+    } else {
+      if (mp) mp.style.display = '';
+      if (cr) cr.style.display = '';
+      if (sp) sp.style.display = 'none';
+    }
   });
 });
 
@@ -601,6 +669,25 @@ document.querySelectorAll('.tab').forEach(tab => {
 document.getElementById('searchInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') doSearch();
 });
+
+// -- Update Stops Panel --
+function updateStopsPanel() {
+  var load = LOADS[currentLoad]; if (!load || !load.stops) return; var s = load.stops;
+  document.getElementById('stopPickupName').textContent = s.pickup.name;
+  document.getElementById('stopPickupAddress').textContent = s.pickup.address;
+  document.getElementById('stopPickupCity').textContent = s.pickup.city;
+  document.getElementById('stopPickupDate').textContent = s.pickup.date;
+  document.getElementById('stopPickupTime').textContent = s.pickup.time;
+  document.getElementById('stopPickupWindow').textContent = s.pickup.window;
+  document.getElementById('stopPickupType').textContent = s.pickup.type;
+  document.getElementById('stopDeliveryName').textContent = s.delivery.name;
+  document.getElementById('stopDeliveryAddress').textContent = s.delivery.address;
+  document.getElementById('stopDeliveryCity').textContent = s.delivery.city;
+  document.getElementById('stopDeliveryDate').textContent = s.delivery.date;
+  document.getElementById('stopDeliveryTime').textContent = s.delivery.time;
+  document.getElementById('stopDeliveryWindow').textContent = s.delivery.window;
+  document.getElementById('stopDeliveryType').textContent = s.delivery.type;
+}
 
 // ══════════════════════════════════════════
 // PLAYWRIGHT HELPERS — window.triggerX pattern
