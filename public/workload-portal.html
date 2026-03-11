@@ -734,9 +734,8 @@ async function logSubmitNotification(load, decision, notes, finalRate) {
         'Prefer': 'return=representation'
       },
       body: JSON.stringify({
-        process_id: DOC_PROCESS_ID,
         run_id: runId,
-        step: 0,
+        step_number: 0,
         log_type: 'email_notification_pending',
         message: 'PENDING EMAIL: Decision "' + decision + '" submitted for load ' + load.id + ' (' + load.customer + '). Notify: ' + NOTIFY_EMAIL,
         metadata: {
@@ -1057,9 +1056,8 @@ async function logDocUpload(docEntry) {
         'Prefer': 'return=representation'
       },
       body: JSON.stringify({
-        process_id: DOC_PROCESS_ID,
         run_id: runId,
-        step: 0,
+        step_number: 0,
         log_type: 'document_upload',
         message: 'Document uploaded: ' + docEntry.name + ' for load ' + docEntry.loadId + ' (' + docEntry.customer + ')',
         metadata: {
@@ -1091,9 +1089,8 @@ async function sendUploadNotification(docEntry) {
         'Prefer': 'return=representation'
       },
       body: JSON.stringify({
-        process_id: DOC_PROCESS_ID,
         run_id: runId,
-        step: 0,
+        step_number: 0,
         log_type: 'email_notification_pending',
         message: 'PENDING EMAIL: New document "' + docEntry.name + '" uploaded for load ' + docEntry.loadId + ' (' + docEntry.customer + '). Notify: ' + NOTIFY_EMAIL,
         metadata: {
