@@ -179,13 +179,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <td><span class="status-badge badge-available">Available</span></td>
           <td>Dallas, TX</td>
         </tr>
-            <tr onclick="selectLoad('summit2')" data-testid="load-row-summit2">
-              <td style="font-weight:600;color:#1a73e8;">UF-5871204567</td>
-              <td>Summit Foods</td>
-              <td>Austin, TX</td>
-              <td>San Antonio, TX</td>
-              <td><span style="background:#e6f4ea;color:#1e8e3e;padding:2px 8px;border-radius:10px;font-size:11px;">Available</span></td>
-            </tr>
+        <tr class="load-row" data-load="summit2" onclick="selectLoad('summit2')">
+          <td><a class="load-link" data-testid="load-link-summit2">UF-5871204567</a></td>
+          <td>Summit Foods</td>
+          <td><span class="status-badge badge-available">Available</span></td>
+          <td>Austin, TX</td>
+        </tr>
       </tbody>
     </table>
   </div>
