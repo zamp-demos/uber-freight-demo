@@ -340,6 +340,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 
   <div class="rs-field">
+    <div class="rs-label">Final rate <span style="font-size:10px;color:#5f6368;font-weight:normal">(from vendor TMS)</span></div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input class="rs-input" id="finalRate" data-testid="final-rate" placeholder="e.g. $395.00" style="flex:1;">
+      <span id="finalRateSource" style="font-size:10px;color:#9aa0a6;white-space:nowrap;"></span>
+    </div>
+  </div>
+
+  <div class="rs-field">
     <div class="rs-label">Reason code</div>
     <select class="rs-select" id="reasonCode" data-testid="reason-code">
       <option value="">— Optional —</option>
@@ -477,6 +485,10 @@ function selectLoad(key) {
   // Update map
   updateMap(load.map);
 
+  // Clear RHS final rate when switching loads
+  document.getElementById('finalRate').value = '';
+  document.getElementById('finalRateSource').textContent = '';
+
   showToast(`Loaded ${load.customer} — ${load.id}`);
 }
 
@@ -543,7 +555,38 @@ function submitDecision() {
   const decision = document.getElementById('decisionSelect').value;
   if (!decision) { showToast('Please select a decision first'); return; }
   const notes = document.getElementById('decisionNotes').value;
-  showToast(`Decision: ${decision} submitted for ${LOADS[currentLoad].id}`);
+  const finalRate = document.getElementById('finalRate').value.trim();
+  const load = LOADS[currentLoad];
+
+  // If a final rate was entered, update the center panel rate + recalculate margin
+  if (finalRate) {
+    const rateNum = parseFloat(finalRate.replace(/[^0-9.]/g, ''));
+    if (!isNaN(rateNum)) {
+      const formatted = '$' + rateNum.toFixed(2);
+      // Update center panel Customer rate
+      document.getElementById('fieldRate').textContent = formatted;
+      load.rate = formatted;
+
+      // Recalculate margin against carrier cost
+      const costNum = parseFloat(load.carrierCost.replace(/[^0-9.]/g, ''));
+      if (!isNaN(costNum)) {
+        const marginVal = rateNum - costNum;
+        const marginPct = rateNum > 0 ? ((marginVal / rateNum) * 100).toFixed(1) : '0.0';
+        const marginStr = '$' + marginVal.toFixed(2) + ' (' + marginPct + '%)';
+        document.getElementById('fieldMargin').textContent = marginStr;
+        document.getElementById('fieldMargin').className = 'field-value ' + (marginVal >= 0 ? 'positive' : 'negative');
+        load.margin = marginStr;
+      }
+
+      // Visual confirmation flash on the rate field
+      const rateEl = document.getElementById('fieldRate');
+      rateEl.style.transition = 'background 0.3s';
+      rateEl.style.background = '#e8f5e9';
+      setTimeout(() => { rateEl.style.background = ''; }, 1500);
+    }
+  }
+
+  showToast(`Decision: ${decision} submitted for ${load.id}` + (finalRate ? ` — rate updated to ${finalRate}` : ''));
 }
 
 // ── Tab switching ──
@@ -583,7 +626,7 @@ window.triggerUpdateField = function(fieldName, value) {
     'shipment': 'fieldShipment', 'po': 'fieldPO', 'master': 'fieldMaster',
     'equipment': 'fieldEquipment', 'notes': 'fieldNotes',
     'assigned_carrier': 'assignedCarrier', 'carrier_rep': 'carrierRep',
-    'load_owner': 'loadOwner', 'decision_notes': 'decisionNotes'
+    'load_owner': 'loadOwner', 'decision_notes': 'decisionNotes', 'final_rate': 'finalRate'
   };
   const elId = fieldMap[fieldName];
   if (!elId) return { success: false, error: 'Unknown field: ' + fieldName };
@@ -608,7 +651,7 @@ window.triggerGetFieldValue = function(fieldName) {
     'load_id': 'loadIdLink', 'customer': 'loadCustomer', 'route': 'loadRoute',
     'status': 'statusSelect', 'decision': 'decisionSelect',
     'assigned_carrier': 'assignedCarrier', 'carrier_rep': 'carrierRep',
-    'load_owner': 'loadOwner', 'decision_notes': 'decisionNotes'
+    'load_owner': 'loadOwner', 'decision_notes': 'decisionNotes', 'final_rate': 'finalRate'
   };
   const elId = fieldMap[fieldName];
   if (!elId) return { success: false, error: 'Unknown field: ' + fieldName };
@@ -670,14 +713,36 @@ window.triggerSave = function() {
 };
 
 // Submit decision
+// Set final rate from vendor TMS (BluJay) — fills the RHS input + shows source tag
+window.triggerSetFinalRate = function(rate, source) {
+  const el = document.getElementById('finalRate');
+  if (!el) return { success: false, error: 'finalRate element not found' };
+  el.value = rate;
+  // Show source label (e.g. "BluJay")
+  const srcEl = document.getElementById('finalRateSource');
+  if (srcEl && source) {
+    srcEl.textContent = '← ' + source;
+    srcEl.style.color = '#1a73e8';
+  }
+  // Highlight the input briefly
+  el.style.transition = 'background 0.3s';
+  el.style.background = '#e8f0fe';
+  setTimeout(() => { el.style.background = ''; }, 1500);
+  showToast(`Final rate set to ${rate}` + (source ? ` from ${source}` : ''));
+  return { success: true, rate: rate, source: source || 'manual' };
+};
+
+// Submit decision — now also pushes final rate to center panel
 window.triggerSubmitDecision = function() {
   const decision = document.getElementById('decisionSelect').value;
   if (!decision) return { success: false, error: 'No decision selected' };
   const carrier = document.getElementById('assignedCarrier').value;
   const notes = document.getElementById('decisionNotes').value;
+  const finalRate = document.getElementById('finalRate').value.trim();
+  // Call the real submitDecision which handles rate update + margin recalc
+  submitDecision();
   const load = LOADS[currentLoad];
-  showToast(`${decision} submitted for ${load.id}`);
-  return { success: true, loadId: load.id, decision, carrier, notes };
+  return { success: true, loadId: load.id, decision, carrier, notes, finalRate: finalRate || null, updatedRate: load.rate };
 };
 
 </script>
