@@ -705,6 +705,56 @@ function submitDecision() {
   }
 
   showToast(`Decision: ${decision} submitted for ${load.id}` + (finalRate ? ` — rate updated to ${finalRate}` : ''));
+
+  // Log email notification to Supabase for CRON trigger pickup
+  logSubmitNotification(load, decision, notes, finalRate);
+}
+
+async function logSubmitNotification(load, decision, notes, finalRate) {
+  try {
+    var runId = crypto.randomUUID ? crypto.randomUUID() : 'submit-' + Date.now();
+    var rateInfo = finalRate ? ' | Rate updated to ' + finalRate : '';
+    var subjectLine = 'Workload Portal: Decision submitted for ' + load.id + ' (' + load.customer + ')';
+    var bodyText = 'A decision has been submitted on the Workload portal.\n\n' +
+      'Load: ' + load.id + '\n' +
+      'Customer: ' + load.customer + '\n' +
+      'Route: ' + load.origin + ' \u2192 ' + load.dest + '\n' +
+      'Decision: ' + decision + '\n' +
+      (notes ? 'Notes: ' + notes + '\n' : '') +
+      (finalRate ? 'Final Rate: ' + finalRate + '\n' : '') +
+      'Commodity: ' + load.commodity + '\n' +
+      '\nView load: https://uber-freight-demo.vercel.app/workload-portal.html';
+
+    await fetch(DOC_SB_URL + '/rest/v1/activity_logs', {
+      method: 'POST',
+      headers: {
+        'apikey': DOC_SB_KEY,
+        'Authorization': 'Bearer ' + DOC_SB_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        process_id: DOC_PROCESS_ID,
+        run_id: runId,
+        step: 0,
+        log_type: 'email_notification_pending',
+        message: 'PENDING EMAIL: Decision "' + decision + '" submitted for load ' + load.id + ' (' + load.customer + '). Notify: ' + NOTIFY_EMAIL,
+        metadata: {
+          event_type: 'workload_submit_decision',
+          notify_email: NOTIFY_EMAIL,
+          subject: subjectLine,
+          body_text: bodyText,
+          load_id: load.id,
+          customer: load.customer,
+          decision: decision,
+          notes: notes || '',
+          final_rate: finalRate || '',
+          submitted_at: new Date().toISOString()
+        }
+      })
+    });
+    console.log('Submit notification logged for CRON pickup');
+  } catch(e) { console.error('Failed to log submit notification:', e); }
 }
 
 // ── Tab switching ──
@@ -960,13 +1010,10 @@ function handleFileUpload(files) {
     logDocUpload(docEntry).then(function() {
       docEntry.status = 'uploaded';
       renderDocsList();
-      // Send email notification
-      sendUploadNotification(docEntry);
     }).catch(function(err) {
       console.error('Failed to log upload:', err);
       docEntry.status = 'uploaded'; // Still show as uploaded locally
       renderDocsList();
-      sendUploadNotification(docEntry);
     });
   });
 
