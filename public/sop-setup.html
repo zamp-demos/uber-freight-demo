@@ -511,17 +511,10 @@ function updateTriggerBtn() {
 // ─── SUPABASE CONFIG ───
 const SB_URL = 'https://csvjcpmxndgaujxlvikw.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdmpjcG14bmRnYXVqeGx2aWt3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjAyOTkzNiwiZXhwIjoyMDg3NjA1OTM2fQ.81sjVPgI5QzYLlwz1YwbkCNxK-07Rki98px_JUhK6To';
-const PROCESS_ID = '65dbe6b4-122f-458c-b7ff-6f99c951c109'; // TMS Ops
-const DASHBOARD_BASE = 'https://pace-live-dashboard.vercel.app';
+const PROCESS_ID = '65dbe6b4-122f-458c-b7ff-6f99c951c109';
+const DASHBOARD_URL = 'https://pace-live-dashboard.vercel.app';
 
-function uuid() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
-}
-
-async function sbPost(table, body) {
+async function sbInsert(table, data) {
   const res = await fetch(`${SB_URL}/rest/v1/${table}`, {
     method: 'POST',
     headers: {
@@ -530,14 +523,26 @@ async function sbPost(table, body) {
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(data)
   });
-  if (!res.ok) throw new Error(`POST ${table} failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`Insert ${table} failed: ${res.status} ${await res.text()}`);
   return res.json();
 }
 
-async function sbPatch(table, query, body) {
+async function sbSelect(table, query) {
   const res = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, {
+    method: 'GET',
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${SB_KEY}`,
+    }
+  });
+  if (!res.ok) throw new Error(`Select ${table} failed: ${res.status}`);
+  return res.json();
+}
+
+async function sbUpdate(table, id, data) {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
     method: 'PATCH',
     headers: {
       'apikey': SB_KEY,
@@ -545,183 +550,217 @@ async function sbPatch(table, query, body) {
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(data)
   });
-  if (!res.ok) throw new Error(`PATCH ${table} failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Update ${table} failed: ${res.status}`);
   return res.json();
 }
 
-// ─── TRIGGER WORKFLOW ───
+// ─── TRIGGER WORKFLOW (REAL) ───
+let currentRunId = null;
+let pollInterval = null;
+let lastLogCount = 0;
+
 async function triggerWorkflow() {
+  if (!selectedTicket) return;
+  const t = selectedTicket;
   const btn = document.getElementById('triggerBtn');
   const statusDiv = document.getElementById('triggerStatus');
-  const t = selectedTicket;
-  if (!t) return;
 
   btn.disabled = true;
-  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Running…';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M12 2v4m0 12v4m-7.07-2.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4m-2.93 7.07l-2.83-2.83M6.34 6.34L3.51 3.51"/></svg> Triggering...';
   statusDiv.classList.add('visible');
 
-  const isHITL = t.priority === 'High' && t.sopAccount === 'pepsi';
-  const runId = uuid();
-  const now = new Date().toISOString();
-  const runName = `TMS-${t.customer.replace(/\s/g,'').toUpperCase()}-${now.slice(5,10).replace('-','')}-${now.slice(11,16).replace(':','')}`;
-
-  // Build progress from the EDITED SOP steps
-  const steps = currentSOPSteps.map(s => ({
-    label: s.title,
-    detail: s.detail,
-    action: s.action,
-    substeps: s.substeps || []
-  }));
-
-  // Append outcome steps
-  if (isHITL) {
-    steps.push({ label:'Mismatch Detected', action:'decision',
-      detail:'Commodity mismatch — BluJay: PACKAGED SNACKS vs Workload: Frozen Foods. Escalating to human reviewer.',
-      substeps:[] });
-    steps.push({ label:'HITL Escalation', action:'decision',
-      detail:`Created "Needs Attention" flag. Ticket ${t.id} requires manual review.`,
-      substeps:[] });
-  } else {
-    steps.push({ label:'Validation Passed', action:'validate',
-      detail:`All fields match. Commodity: ${t.commodity}. Route confirmed.`,
-      substeps:[] });
-    steps.push({ label:'Completing', action:'browser',
-      detail:`Marking ticket ${t.id} as verified. Updating status to Resolved.`,
-      substeps:[] });
-  }
-
-  // Render progress UI
-  statusDiv.innerHTML = '<div class="progress-steps">' +
-    steps.map((s,i) => `<div class="p-step" id="pstep${i}"><div class="p-step-dot"></div>${s.label}</div>`).join('') +
-    '</div><div id="stepDetail" class="status-msg running" style="margin-top:12px;text-align:center;"></div>';
-
   try {
-    // 1. Create the run in Supabase
-    await sbPost('activity_runs', {
-      id: runId,
+    // Build run name
+    const ts = new Date().toISOString().slice(5,16).replace(/[-T:]/g,'');
+    const clientTag = t.customer.replace(/\s+/g,'').toUpperCase();
+    const isHITL = t.sopAccount === 'pepsi' && t.priority === 'High';
+    const runName = `TMS-${clientTag}-${ts}`;
+
+    // 1. Create run in activity_runs
+    const runs = await sbInsert('activity_runs', {
       process_id: PROCESS_ID,
       name: runName,
       document_name: `${t.customer} — ${t.id}`,
       status: 'in_progress',
-      current_status_text: `Processing ${t.id} for ${t.customer}...`
+      current_status_text: 'Queued — waiting for Pace agent pickup'
     });
+    const run = Array.isArray(runs) ? runs[0] : runs;
+    currentRunId = run.id;
 
-    // 2. Walk through each SOP step, log to Supabase
-    const chipMap = { browser:'Browser Action', extract:'Data Extraction', validate:'Validation', decision:'Decision Point' };
-    const logTypeMap = { browser:'system', extract:'system', validate:'system', decision:'decision' };
+    // 2. Write trigger config as step 0 log (Pace CRON reads this)
+    const bluejayUrl = document.getElementById('bluejayUrl').textContent;
+    const bjUser = document.getElementById('bjUser').value;
+    const sopSteps = currentSOPSteps.map(s => ({
+      step: s.step, title: s.title, action: s.action,
+      detail: s.detail, substeps: s.substeps
+    }));
 
-    for (let i = 0; i < steps.length; i++) {
-      const s = steps[i];
-      const el = document.getElementById(`pstep${i}`);
-      el.classList.add('active');
-      document.getElementById('stepDetail').textContent = s.detail;
-      document.getElementById('stepDetail').className = 'status-msg running';
-
-      // Log this step to Supabase
-      const logType = logTypeMap[s.action] || 'system';
-      const reasoning = s.substeps.length > 0
-        ? s.substeps.map((sub, j) => `${j+1}. ${sub}`)
-        : [s.detail];
-
-      await sbPost('activity_logs', {
-        id: uuid(),
-        run_id: runId,
-        step_number: i + 1,
-        log_type: logType,
-        message: s.detail,
-        metadata: {
-          step_name: s.label,
-          action_type: chipMap[s.action] || s.action,
-          reasoning_steps: reasoning
-        }
-      });
-
-      await sleep(1200 + Math.random() * 800);
-      el.classList.remove('active');
-      el.classList.add('done');
-    }
-
-    // 3. Log completion/escalation entry
-    const finalStatus = isHITL ? 'needs_attention' : 'done';
-    const finalMessage = isHITL
-      ? `⚠️ Commodity mismatch: BluJay=PACKAGED SNACKS vs Workload=Frozen Foods. Ticket ${t.id} escalated for human review.`
-      : `✅ Load verified. Commodity: ${t.commodity}. Ticket ${t.id} resolved.`;
-    const finalLogType = isHITL ? 'error' : 'complete';
-
-    await sbPost('activity_logs', {
-      id: uuid(),
-      run_id: runId,
-      step_number: steps.length,
-      log_type: finalLogType,
-      message: finalMessage,
+    await sbInsert('activity_logs', {
+      run_id: currentRunId,
+      step_number: 0,
+      log_type: 'system',
+      message: 'Workflow triggered from SOP setup page — awaiting Pace agent pickup',
       metadata: {
-        step_name: isHITL ? 'HITL Escalation' : 'Run Complete',
-        ticket_id: t.id,
-        customer: t.customer,
-        commodity: t.commodity,
-        route: `${t.origin} → ${t.dest}`
+        type: 'sop_trigger',
+        status: 'pending',
+        ticket: {
+          id: t.id, customer: t.customer, clientKey: t.clientKey,
+          ref: t.ref, loadId: t.loadId,
+          origin: t.origin, dest: t.dest,
+          commodity: t.commodity, priority: t.priority,
+          sopAccount: t.sopAccount
+        },
+        bluejay: {
+          url: bluejayUrl,
+          username: bjUser,
+          ui: selectedUI
+        },
+        portals: {
+          zendesk: 'https://uber-freight-demo.vercel.app/zendesk-portal.html',
+          workload: 'https://uber-freight-demo.vercel.app/workload-portal.html'
+        },
+        sop_steps: sopSteps,
+        is_hitl: isHITL
       }
     });
 
-    // If HITL, add an artifact showing the mismatch
-    if (isHITL) {
-      await sbPost('activity_logs', {
-        id: uuid(),
-        run_id: runId,
-        step_number: steps.length - 1,
-        log_type: 'artifact',
-        message: 'Commodity Mismatch',
-        metadata: {
-          step_name: 'Commodity Mismatch',
-          data: {
-            'Shipment Ref': t.ref,
-            'Load ID': t.loadId,
-            'BluJay Commodity': 'PACKAGED SNACKS',
-            'Workload Commodity': 'Frozen Foods',
-            'Match': '❌ MISMATCH',
-            'Impact': 'Requires human review before load can be awarded',
-            'SOP Rule': 'Non-standard flow — commodity must match exactly'
+    // 3. Show initial status with polling UI
+    statusDiv.innerHTML = buildProgressUI(runName);
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M12 2v4m0 12v4m-7.07-2.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4m-2.93 7.07l-2.83-2.83M6.34 6.34L3.51 3.51"/></svg> Running...';
+
+    // 4. Start polling for real logs
+    lastLogCount = 0;
+    pollInterval = setInterval(() => pollLogs(), 3000);
+
+  } catch (err) {
+    statusDiv.innerHTML = `<p class="status-msg error">❌ Failed to trigger: ${err.message}</p>`;
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Trigger Pace Agent';
+  }
+}
+
+function buildProgressUI(runName) {
+  return `
+    <div style="text-align:left;max-width:700px;margin:16px auto 0;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:13px;font-weight:600;color:#1a73e8;">Run: ${runName}</span>
+        <span id="runStatusBadge" style="font-size:11px;padding:2px 8px;border-radius:4px;background:#e8f0fe;color:#1a73e8;font-weight:500;">In Progress</span>
+      </div>
+      <div id="liveStepLog" style="background:#1e1e2d;border-radius:8px;padding:16px;font-family:'SF Mono',Monaco,Consolas,monospace;font-size:12px;color:#a8b2c1;max-height:320px;overflow-y:auto;line-height:1.8;">
+        <div class="log-line" style="color:#5f6368;">⏳ Waiting for Pace agent to pick up workflow...</div>
+      </div>
+      <div id="dashboardLink" style="margin-top:12px;display:none;">
+        <a href="${DASHBOARD_URL}/in_progress/processes/${PROCESS_ID}/runs/${''}" target="_blank"
+           style="font-size:13px;color:#1a73e8;font-weight:500;text-decoration:none;">
+          📊 View on Pace Dashboard →
+        </a>
+      </div>
+    </div>
+  `;
+}
+
+const stepIcons = {
+  system: '⚙️', decision: '⚡', error: '🔴', artifact: '📋', complete: '✅'
+};
+const stepColors = {
+  system: '#8ab4f8', decision: '#f8c146', error: '#f28b82', artifact: '#81c995', complete: '#81c995'
+};
+
+async function pollLogs() {
+  if (!currentRunId) return;
+
+  try {
+    // Fetch logs for this run
+    const logs = await sbSelect('activity_logs',
+      `run_id=eq.${currentRunId}&order=step_number.asc,created_at.asc`
+    );
+
+    // Fetch run status
+    const runData = await sbSelect('activity_runs', `id=eq.${currentRunId}`);
+    const run = runData[0];
+
+    // Update log display (skip step 0 which is our trigger config)
+    const realLogs = logs.filter(l => l.step_number > 0);
+
+    if (realLogs.length > 0) {
+      const logDiv = document.getElementById('liveStepLog');
+      if (logDiv) {
+        let html = '';
+        realLogs.forEach(log => {
+          const icon = stepIcons[log.log_type] || '📝';
+          const color = stepColors[log.log_type] || '#a8b2c1';
+          const stepName = log.metadata?.step_name || `Step ${log.step_number}`;
+          const time = new Date(log.created_at).toLocaleTimeString();
+
+          html += `<div class="log-line" style="color:${color};margin-bottom:4px;">`;
+          html += `<span style="color:#5f6368;font-size:11px;">[${time}]</span> `;
+          html += `${icon} <span style="color:#fff;font-weight:600;">${stepName}</span> — ${log.message}`;
+
+          // Show reasoning steps if available
+          if (log.metadata?.reasoning_steps) {
+            log.metadata.reasoning_steps.forEach(r => {
+              html += `<div style="margin-left:24px;color:#6b7280;font-size:11px;">↳ ${r}</div>`;
+            });
           }
-        }
-      });
+
+          // Show artifact data if available
+          if (log.metadata?.data && log.log_type === 'artifact') {
+            html += `<div style="margin-left:24px;margin-top:4px;">`;
+            Object.entries(log.metadata.data).forEach(([k,v]) => {
+              html += `<div style="color:#6b7280;font-size:11px;"><span style="color:#8ab4f8;">${k}:</span> ${v}</div>`;
+            });
+            html += `</div>`;
+          }
+
+          html += `</div>`;
+        });
+        logDiv.innerHTML = html;
+        logDiv.scrollTop = logDiv.scrollHeight;
+      }
     }
 
-    // 4. Update run status
-    await sbPatch('activity_runs', `id=eq.${runId}`, {
-      status: finalStatus,
-      current_status_text: finalMessage
-    });
+    // Update status badge and check completion
+    const badge = document.getElementById('runStatusBadge');
+    const btn = document.getElementById('triggerBtn');
 
-    // 5. Show result with dashboard link
-    const dashboardLink = `${DASHBOARD_BASE}/done/processes`;
-    if (isHITL) {
-      document.getElementById('stepDetail').innerHTML =
-        `⚠️ <strong>Workflow paused — Needs Attention.</strong> Commodity mismatch requires human review.<br>` +
-        `<a href="${dashboardLink}" target="_blank" style="color:#1a73e8;font-weight:600;margin-top:8px;display:inline-block;">` +
-        `View on Pace Dashboard →</a>`;
-      document.getElementById('stepDetail').className = 'status-msg error';
-    } else {
-      document.getElementById('stepDetail').innerHTML =
-        `✅ <strong>Workflow complete.</strong> Ticket verified and resolved.<br>` +
-        `<a href="${dashboardLink}" target="_blank" style="color:#1a73e8;font-weight:600;margin-top:8px;display:inline-block;">` +
-        `View on Pace Dashboard →</a>`;
-      document.getElementById('stepDetail').className = 'status-msg success';
+    if (run && (run.status === 'done' || run.status === 'needs_attention')) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+
+      if (badge) {
+        const isDone = run.status === 'done';
+        badge.style.background = isDone ? '#e6f4ea' : '#fef3e0';
+        badge.style.color = isDone ? '#0d904f' : '#c8962e';
+        badge.textContent = isDone ? 'Complete' : 'Needs Attention';
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Trigger Pace Agent';
+
+      // Show dashboard link
+      const linkDiv = document.getElementById('dashboardLink');
+      if (linkDiv) {
+        const statusPath = run.status === 'done' ? 'done' : 'needs_attention';
+        linkDiv.innerHTML = `<a href="${DASHBOARD_URL}/${statusPath}/processes/${PROCESS_ID}/runs/${currentRunId}" target="_blank" style="font-size:13px;color:#1a73e8;font-weight:500;text-decoration:none;">📊 View on Pace Dashboard →</a>`;
+        linkDiv.style.display = 'block';
+      }
+
+    } else if (run) {
+      // Update status text
+      if (badge && run.current_status_text) {
+        badge.textContent = run.current_status_text.length > 40
+          ? run.current_status_text.substring(0,40) + '...'
+          : run.current_status_text;
+      }
     }
 
   } catch (err) {
-    console.error('Trigger error:', err);
-    document.getElementById('stepDetail').innerHTML =
-      `❌ <strong>Error:</strong> ${err.message}`;
-    document.getElementById('stepDetail').className = 'status-msg error';
+    console.error('Poll error:', err);
   }
-
-  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Again';
-  btn.disabled = false;
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
 </body>
 </html>
