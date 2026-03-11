@@ -8,21 +8,21 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background:#f8f9fa; color:#2f3941; display:flex; height:100vh; overflow:hidden; }
 /* LEFT SIDEBAR — ticket list */
-.sidebar { width:320px; background:#fff; border-right:1px solid #d8dcde; display:flex; flex-direction:column; }
-.sidebar-header { background:#03363D; color:#fff; padding:14px 16px; display:flex; align-items:center; gap:10px; }
+.sidebar { width:420px; background:#fff; border-right:1px solid #d8dcde; display:flex; flex-direction:column; }
+.sidebar-header { background:#04464D; color:#fff; padding:14px 16px; display:flex; align-items:center; gap:10px; }
 .sidebar-header .logo { font-size:20px; font-weight:700; letter-spacing:-0.5px; }
 .sidebar-header .env { font-size:11px; background:rgba(255,255,255,0.15); padding:2px 8px; border-radius:10px; }
 .views-bar { padding:10px 16px; border-bottom:1px solid #d8dcde; display:flex; align-items:center; gap:8px; }
 .views-bar .view-name { font-weight:600; font-size:14px; }
-.views-bar .count { background:#e9ebed; color:#68737d; font-size:11px; padding:1px 7px; border-radius:10px; font-weight:600; }
+.views-bar .count { background:#e9ebed; color:#68747d; font-size:11px; padding:1px 7px; border-radius:10px; font-weight:600; }
 .ticket-list { flex:1; overflow-y:auto; }
 .ticket-item { padding:12px 16px; border-bottom:1px solid #e9ebed; cursor:pointer; transition:background 0.15s; }
 .ticket-item:hover { background:#f8f9fa; }
-.ticket-item.active { background:#edf7ff; border-left:3px solid #1f73b7; }
+.ticket-item.active { background:#edf7ff; border-left:4px solid #1f74b7; }
 .ticket-item .t-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-.ticket-item .t-id { font-size:12px; color:#68737d; font-weight:600; }
+.ticket-item .t-id { font-size:12px; color:#68747d; font-weight:600; }
 .ticket-item .t-time { font-size:11px; color:#87929d; }
-.ticket-item .t-subject { font-size:13px; font-weight:500; line-height:1.3; margin-bottom:4px; }
+.ticket-item .t-subject { font-size:14px; font-weight:500; line-height:1.4; margin-bottom:4px; }
 .ticket-item .t-meta { display:flex; gap:6px; align-items:center; }
 .badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:3px; text-transform:uppercase; letter-spacing:0.3px; }
 .badge-open { background:#E34F32; color:#fff; }
@@ -230,7 +230,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helve
         amEmail: 'skelly@example-freight.com',
         time: 'Today at 08:14 AM',
         body: 'New load prep request for Summit Foods. Customer Ref: PP-88203741. Load ID: UF-5870331456. Route: Dallas, TX → Houston, TX. Pickup: 03/08/2026. Commodity: Packaged Snacks. Contract primary — verify against BlueJay shipment NBL.PP-88203741. AM: Sam Kelly.'
-      }
+      },
+    {
+      id: 'ZD-40284',
+      customer: 'Summit Foods',
+      subject: 'Load Prep: Summit Foods — PP-66401289',
+      status: 'Open',
+      priority: 'Normal',
+      requester: 'load-prep-bot@uber.com',
+      requesterEmail: 'load-prep-bot@uber.com',
+      assignee: 'BLR Ops Team',
+      type: 'Task',
+      customerRef: 'PP-66401289',
+      loadId: 'UF-5871204567',
+      route: 'Austin TX → San Antonio TX',
+      pickup: '03/09/2026',
+      commodity: 'Refrigerated Produce',
+      tags: ['load-prep', 'summit-foods', 'contract-primary'],
+      macro: 'summit',
+      time: '8 minutes ago',
+      body: 'New load tender received for Summit Foods.\n\nCustomer Ref: PP-66401289\nLoad ID: UF-5871204567\nRoute: Austin, TX → San Antonio, TX\nPickup: 03/09/2026 09:00 PT\nCommodity: Refrigerated Produce\nEquipment: Reefer (53\')\nRate: $285.00\n\nPlease process per Summit Foods SOP. AM: Sam Kelly (skelly@example-freight.com)'
+    }
     ];
 
     let currentTicket = null;

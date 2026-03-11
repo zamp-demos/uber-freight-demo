@@ -179,6 +179,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <td><span class="status-badge badge-available">Available</span></td>
           <td>Dallas, TX</td>
         </tr>
+            <tr onclick="selectLoad('summit2')" data-testid="load-row-summit2">
+              <td style="font-weight:600;color:#1a73e8;">UF-5871204567</td>
+              <td>Summit Foods</td>
+              <td>Austin, TX</td>
+              <td>San Antonio, TX</td>
+              <td><span style="background:#e6f4ea;color:#1e8e3e;padding:2px 8px;border-radius:10px;font-size:11px;">Available</span></td>
+            </tr>
       </tbody>
     </table>
   </div>
@@ -472,6 +479,26 @@ const LOADS = {
       origin: {cx:250,cy:130,label:'Dallas',ly:118},
       dest: {cx:340,cy:200,label:'Houston',ly:223},
       distLabel: '240 mi', distRect: {x:278,y:155}
+    }
+  },
+  summit2: {
+    id: 'UF-5871204567', customer: 'Summit Foods',
+    origin: 'Austin, TX', dest: 'San Antonio, TX', distance: '80 mi',
+    status: 'Available', tags: 'Contract Primary', commodity: 'Refrigerated Produce',
+    shipment: 'SF-66401289', vendorRef: 'NBL.PP-66401289', po: 'PO-88412', master: '33920145',
+    equipment: "Reefer (53')", notes: 'TEMPERATURE MONITORING REQUIRED',
+    rate: '$285.00', carrierCost: '$248.00', margin: '$37.00 (13.0%)',
+    targetMargin: '12.0%', infoText: 'Contract Primary — Summit Foods account.',
+    stops: {
+      pickup: { name: 'Summit Foods Cold Storage', address: '1200 Logistics Blvd', city: 'Austin, TX 78744', date: '03/09/2026', time: '09:00 PT', window: '08:00 - 12:00 PT', type: 'Live Load' },
+      delivery: { name: 'H-E-B Fresh Distribution', address: '3600 Produce Row', city: 'San Antonio, TX 78220', date: '03/09/2026', time: '14:00 PT', window: '12:00 - 16:00 PT', type: 'Live Unload' }
+    },
+    map: {
+      land: 'M60,20 L200,15 L350,20 L500,40 L560,100 L580,180 L560,260 L480,290 L340,280 L200,260 L100,200 L40,120 Z',
+      route: {x1:220,y1:160,x2:200,y2:210},
+      origin: {cx:220,cy:160,label:'Austin',ly:148},
+      dest: {cx:200,cy:210,label:'San Antonio',ly:233},
+      distLabel: '80 mi', distRect: {x:193,y:175}
     }
   }
 };
