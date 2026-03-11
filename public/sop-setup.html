@@ -3,291 +3,531 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pace — SOP Setup</title>
+<title>SOP Setup — Freight TMS Demo</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;background:#f5f6f8;color:#1a1a1a;min-height:100vh;display:flex;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#202124;min-height:100vh;padding:32px 20px;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto 32px;}
+.top-bar a{font-size:13px;color:#1a73e8;text-decoration:none;font-weight:500;}
+.top-bar a:hover{text-decoration:underline;}
+.logo{font-size:12px;font-weight:600;color:#1a73e8;letter-spacing:2px;text-transform:uppercase;}
+h1{font-size:24px;font-weight:700;color:#1e1e2d;text-align:center;margin-bottom:4px;}
+.subtitle{font-size:14px;color:#5f6368;text-align:center;margin-bottom:28px;}
+.container{max-width:1100px;margin:0 auto;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:860px){.grid{grid-template-columns:1fr;}}
 
-/* Sidebar */
-.sidebar{width:220px;background:#1a1a2e;color:#fff;display:flex;flex-direction:column;min-height:100vh;padding:24px 0;}
-.sidebar .brand{padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:16px;}
-.sidebar .brand-text{font-size:13px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;}
-.sidebar .brand-name{font-size:20px;font-weight:700;margin-top:4px;letter-spacing:-0.3px;}
-.sidebar .nav-section{padding:0 12px;margin-bottom:8px;}
-.sidebar .nav-label{font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;padding:8px 8px 6px;}
-.sidebar .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;font-size:13px;color:rgba(255,255,255,0.7);cursor:pointer;transition:all 0.15s;}
-.sidebar .nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
-.sidebar .nav-item.active{background:rgba(255,255,255,0.1);color:#fff;font-weight:600;}
-.sidebar .nav-icon{font-size:16px;width:20px;text-align:center;}
+/* Cards */
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:24px;position:relative;}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.step-badge{width:28px;height:28px;border-radius:50%;background:#e8f0fe;color:#1a73e8;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.card-title{font-size:15px;font-weight:600;color:#202124;}
 
-/* Main */
-.main{flex:1;display:flex;flex-direction:column;overflow-y:auto;}
-.topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
-.topbar h1{font-size:18px;font-weight:700;color:#111;}
-.topbar .subtitle{font-size:13px;color:#6b7280;margin-top:2px;}
-.topbar-right{display:flex;align-items:center;gap:12px;}
-.status-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
-.status-dot{width:7px;height:7px;border-radius:50%;background:#16a34a;}
+/* Form elements */
+label{display:block;font-size:12px;font-weight:600;color:#5f6368;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
+select,input[type="text"],input[type="password"]{width:100%;padding:10px 12px;border:1px solid #dadce0;border-radius:8px;font-size:14px;color:#202124;background:#fff;outline:none;transition:border .15s;}
+select:focus,input:focus{border-color:#1a73e8;box-shadow:0 0 0 2px rgba(26,115,232,.15);}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235f6368' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
 
-.content{padding:32px;max-width:720px;}
+/* Ticket detail chip */
+.ticket-details{display:none;margin-top:14px;padding:14px;background:#f8f9fa;border-radius:8px;font-size:13px;line-height:1.7;color:#3c4043;}
+.ticket-details.visible{display:block;}
+.td-row{display:flex;gap:6px;}
+.td-label{font-weight:600;color:#5f6368;min-width:100px;}
+.td-value{color:#202124;}
+.priority-high{color:#d93025;font-weight:600;}
+.priority-normal{color:#0d904f;font-weight:600;}
 
-/* Form */
-.form-group{margin-bottom:24px;}
-.form-label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;letter-spacing:0.01em;}
-.form-hint{font-size:12px;color:#9ca3af;margin-bottom:6px;}
-.form-select,.form-input{width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111;background:#fff;transition:border-color 0.2s,box-shadow 0.2s;}
-.form-select:focus,.form-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
-.form-input.password{font-family:monospace;letter-spacing:1px;}
-.form-textarea{width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;color:#111;background:#fff;min-height:180px;line-height:1.7;resize:vertical;font-family:inherit;transition:border-color 0.2s,box-shadow 0.2s;}
-.form-textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+/* Toggle switch */
+.toggle-group{display:flex;background:#f1f3f4;border-radius:8px;padding:3px;margin-bottom:14px;}
+.toggle-btn{flex:1;padding:8px 12px;text-align:center;font-size:13px;font-weight:500;color:#5f6368;border-radius:6px;cursor:pointer;transition:all .15s;border:none;background:transparent;}
+.toggle-btn.active{background:#fff;color:#1a73e8;box-shadow:0 1px 3px rgba(0,0,0,.1);font-weight:600;}
 
-.row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+/* URL display */
+.url-display{background:#1e1e2d;border-radius:8px;padding:12px 14px;font-family:'SF Mono',Monaco,Consolas,monospace;font-size:12px;color:#8ab4f8;margin-bottom:14px;word-break:break-all;}
 
-/* Trigger button */
-.trigger-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 28px;background:#171717;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:8px;}
-.trigger-btn:hover{background:#333;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+/* Credentials row */
+.cred-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* SOP section - full width */
+.sop-section{grid-column:1/-1;margin-top:4px;}
+.sop-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:24px;}
+.sop-card .card-header{margin-bottom:12px;}
+
+/* SOP table */
+.sop-table{width:100%;border-collapse:collapse;font-size:13px;}
+.sop-table th{text-align:left;padding:10px 12px;background:#f8f9fa;color:#5f6368;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e0e0e0;}
+.sop-table td{padding:10px 12px;border-bottom:1px solid #f1f3f4;color:#3c4043;vertical-align:top;line-height:1.5;}
+.sop-table tr:last-child td{border-bottom:none;}
+.sop-table tr:hover{background:#f8f9fa;}
+.sop-step-num{font-weight:700;color:#1a73e8;font-size:12px;}
+.sop-substeps{margin:4px 0 0;padding-left:16px;font-size:12px;color:#5f6368;line-height:1.6;}
+.sop-action-chip{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:500;margin-right:4px;}
+.chip-browser{background:#e8f0fe;color:#1a73e8;}
+.chip-validate{background:#fef3e0;color:#c8962e;}
+.chip-decision{background:#fce8e6;color:#d93025;}
+.chip-extract{background:#e6f4ea;color:#0d904f;}
+
+/* Trigger section */
+.trigger-section{grid-column:1/-1;margin-top:4px;}
+.trigger-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:24px;text-align:center;}
+.trigger-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 40px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:12px;}
+.trigger-btn:hover{background:#1557b0;box-shadow:0 2px 8px rgba(26,115,232,.3);transform:translateY(-1px);}
 .trigger-btn:active{transform:translateY(0);}
-.trigger-btn .btn-icon{font-size:16px;}
-.trigger-btn .spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;}
-.trigger-btn.running .btn-icon{display:none;}
-.trigger-btn.running .spinner{display:inline-block;}
-.trigger-btn.running{background:#374151;pointer-events:none;}
-.trigger-btn.success{background:#16a34a;}
-@keyframes spin{to{transform:rotate(360deg);}}
+.trigger-btn:disabled{background:#dadce0;color:#80868b;cursor:not-allowed;transform:none;box-shadow:none;}
+.trigger-btn svg{width:18px;height:18px;}
 
-/* Toast */
-.toast{position:fixed;bottom:24px;right:24px;background:#171717;color:#fff;padding:14px 20px;border-radius:8px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,0.25);z-index:9999;display:none;max-width:400px;line-height:1.5;}
-.toast.visible{display:block;animation:slideUp 0.3s ease;}
-@keyframes slideUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+/* Status area */
+.trigger-status{margin-top:16px;display:none;}
+.trigger-status.visible{display:block;}
+.status-msg{font-size:13px;color:#5f6368;line-height:1.6;}
+.status-msg.success{color:#0d904f;}
+.status-msg.error{color:#d93025;}
+.status-msg.running{color:#1a73e8;}
 
-/* Divider */
-.divider{border:none;border-top:1px solid #e5e7eb;margin:8px 0 24px;}
+/* Progress steps */
+.progress-steps{display:flex;justify-content:center;gap:8px;margin-top:16px;flex-wrap:wrap;}
+.p-step{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#f8f9fa;border-radius:6px;font-size:12px;color:#5f6368;}
+.p-step.done{background:#e6f4ea;color:#0d904f;}
+.p-step.active{background:#e8f0fe;color:#1a73e8;font-weight:600;}
+.p-step-dot{width:8px;height:8px;border-radius:50%;background:#dadce0;}
+.p-step.done .p-step-dot{background:#0d904f;}
+.p-step.active .p-step-dot{background:#1a73e8;animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 
-/* Pre-filled indicator */
-.prefilled{position:relative;}
-.prefilled::after{content:'Pre-filled';position:absolute;top:10px;right:12px;font-size:10px;font-weight:600;color:#2563eb;background:#eff6ff;padding:2px 8px;border-radius:10px;}
+.footer{text-align:center;margin-top:32px;font-size:12px;color:#80868b;}
+.footer a{color:#1a73e8;text-decoration:none;}
+
+/* SOP empty state */
+.sop-empty{text-align:center;padding:40px 20px;color:#80868b;font-size:14px;}
 </style>
 </head>
 <body>
-
-<!-- Sidebar -->
-<div class="sidebar">
-  <div class="brand">
-    <div class="brand-text">Pace by Zamp</div>
-    <div class="brand-name">SOP Setup</div>
-  </div>
-  <div class="nav-section">
-    <div class="nav-label">Configuration</div>
-    <div class="nav-item active"><span class="nav-icon">⚙️</span> Process Setup</div>
-    <div class="nav-item"><span class="nav-icon">📋</span> SOP Editor</div>
-    <div class="nav-item"><span class="nav-icon">🔑</span> Credentials</div>
-  </div>
-  <div class="nav-section">
-    <div class="nav-label">History</div>
-    <div class="nav-item"><span class="nav-icon">▶️</span> Recent Runs</div>
-    <div class="nav-item"><span class="nav-icon">📊</span> Analytics</div>
-  </div>
+<div class="top-bar">
+  <a href="/">← Back to Demo Home</a>
+  <div class="logo">Pace by Zamp</div>
 </div>
 
-<!-- Main content -->
-<div class="main">
-  <div class="topbar">
-    <div>
-      <h1>Process Configuration</h1>
-      <div class="subtitle">Set up a new automated process — pick a customer, connect portals, write SOP steps, and run.</div>
-    </div>
-    <div class="topbar-right">
-      <div class="status-badge"><span class="status-dot"></span> Ready</div>
-    </div>
-  </div>
+<div class="container">
+  <h1>Workflow Configuration</h1>
+  <p class="subtitle">Select a client and ticket, configure BluJay access, review the SOP, then trigger the Pace agent.</p>
 
-  <div class="content">
-
-    <!-- Customer -->
-    <div class="form-group">
-      <label class="form-label">Customer</label>
-      <div class="form-hint">Select the customer account this process applies to.</div>
-      <select class="form-select" id="customerSelect" data-testid="customer-select">
-        <option value="">— Select customer —</option>
-        <option value="summit_foods" selected>Summit Foods</option>
-        <option value="acme_packaging">Acme Packaging</option>
-        <option value="atlas_beverages">Atlas Beverages</option>
-      </select>
-    </div>
-
-    <!-- Portal URL -->
-    <div class="form-group">
-      <label class="form-label">Target Portal</label>
-      <div class="form-hint">The external system Pace will drive via browser agent.</div>
-      <select class="form-select" id="portalSelect" data-testid="portal-select">
-        <option value="">— Select portal —</option>
-        <option value="bluejay" selected>BlueJay TMS (e2open)</option>
-        <option value="zendesk">Zendesk Support</option>
-        <option value="workload">Uber Freight Workload Board</option>
-        <option value="sap_ariba">SAP Ariba (coming soon)</option>
-      </select>
-      <input class="form-input" id="portalUrl" data-testid="portal-url" value="https://tms.e2open.com/bluejay/sso" placeholder="Portal URL" style="margin-top:8px;" />
+  <div class="grid">
+    <!-- STEP 1: Client & Ticket Selection -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">1</div>
+        <div class="card-title">Select Client & Ticket</div>
+      </div>
+      <div class="field">
+        <label>Client</label>
+        <select id="clientSelect" onchange="onClientChange()">
+          <option value="">— Choose client —</option>
+          <option value="acme">Acme Packaging</option>
+          <option value="atlas">Atlas Beverages</option>
+          <option value="summit">Summit Foods</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Zendesk Ticket</label>
+        <select id="ticketSelect" onchange="onTicketChange()" disabled>
+          <option value="">— Select client first —</option>
+        </select>
+      </div>
+      <div id="ticketDetails" class="ticket-details"></div>
     </div>
 
-    <hr class="divider">
-
-    <!-- Credentials -->
-    <div class="form-group">
-      <label class="form-label">Portal Credentials</label>
-      <div class="form-hint">Pace uses these to authenticate via SSO or direct login.</div>
-      <div class="row-2">
-        <div class="prefilled">
-          <input class="form-input" id="credUsername" data-testid="cred-username" value="pace-agent@uber.com" placeholder="Username" />
+    <!-- STEP 2: BluJay Configuration -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">2</div>
+        <div class="card-title">BluJay TMS Access</div>
+      </div>
+      <div class="field">
+        <label>Portal Version</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" data-ui="classic" onclick="toggleUI(this)">Classic UI</button>
+          <button class="toggle-btn" data-ui="new" onclick="toggleUI(this)">New UI</button>
         </div>
-        <div class="prefilled">
-          <input class="form-input password" id="credPassword" data-testid="cred-password" type="password" value="••••••••••••" placeholder="Password" />
+      </div>
+      <div class="field">
+        <label>Target URL</label>
+        <div id="bluejayUrl" class="url-display">https://uber-freight-demo.vercel.app/bluejay-portal.html</div>
+      </div>
+      <div class="cred-row">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="bjUser" value="FREIGHT_SUMMIT_ALL" readonly style="background:#f8f9fa;">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="bjPass" value="••••••••••••" readonly style="background:#f8f9fa;">
         </div>
       </div>
     </div>
 
-    <hr class="divider">
-
-    <!-- SOP -->
-    <div class="form-group">
-      <label class="form-label">SOP Steps</label>
-      <div class="form-hint">Write the process steps in plain English. Pace will follow these exactly.</div>
-      <textarea class="form-textarea" id="sopText" data-testid="sop-text" placeholder="Write your SOP steps here...">1. Open Zendesk ticket queue — find the load prep ticket for the customer.
-2. Extract the Customer Ref and Load ID from the ticket properties.
-3. Log into BlueJay TMS using SSO credentials.
-4. Search for the shipment using the Customer Ref from step 2.
-5. Extract the commodity classification from BlueJay shipment details.
-6. Compare BlueJay commodity against Workload Board commodity.
-7. If mismatch → flag for human review (Needs Attention).
-8. After human decision → update Workload Board with correct commodity.
-9. Award the load and set status to Awarded.
-10. Return to Zendesk — add resolution note, apply macro, mark Solved.</textarea>
+    <!-- STEP 3: SOP Preview (full width) -->
+    <div class="sop-section">
+      <div class="sop-card">
+        <div class="card-header">
+          <div class="step-badge">3</div>
+          <div class="card-title">SOP Preview</div>
+          <span id="sopClientLabel" style="margin-left:auto;font-size:12px;color:#5f6368;font-weight:500;"></span>
+        </div>
+        <div id="sopContent">
+          <div class="sop-empty">Select a client and ticket above to preview the SOP steps.</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Trigger -->
-    <button class="trigger-btn" id="triggerBtn" data-testid="trigger-btn" onclick="triggerRun()">
-      <span class="btn-icon">▶</span>
-      <span class="spinner"></span>
-      <span class="btn-label">Run Process</span>
-    </button>
-
+    <!-- STEP 4: Trigger (full width) -->
+    <div class="trigger-section">
+      <div class="trigger-card">
+        <div class="card-header" style="justify-content:center;">
+          <div class="step-badge">4</div>
+          <div class="card-title">Run Workflow</div>
+        </div>
+        <p style="font-size:13px;color:#5f6368;max-width:500px;margin:0 auto;">
+          Pace will open the BluJay portal, search for the shipment, extract data, cross-reference against the workload,
+          and either complete the process or escalate for human review.
+        </p>
+        <button id="triggerBtn" class="trigger-btn" onclick="triggerWorkflow()" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Trigger Pace Agent
+        </button>
+        <div id="triggerStatus" class="trigger-status"></div>
+      </div>
+    </div>
   </div>
+
+  <div class="footer">Pace by Zamp · Freight TMS Demo · <a href="/">Home</a></div>
 </div>
 
-<!-- Toast -->
-<div class="toast" id="toast"></div>
-
 <script>
-/* ── Toast ── */
-function showToast(msg, duration) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('visible');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('visible'), duration || 4000);
+// ─── TICKET DATA ───
+const TICKETS = [
+  {
+    id: 'ZD-40281', customer: 'Acme Packaging', clientKey: 'acme',
+    ref: 'BC-44829103', loadId: 'UF-5872041587',
+    origin: 'Fairfield, CA', dest: 'Sacramento, CA',
+    commodity: 'Corrugated Packaging', priority: 'Normal',
+    sopAccount: 'default'
+  },
+  {
+    id: 'ZD-40282', customer: 'Atlas Beverages', clientKey: 'atlas',
+    ref: 'NU-77291034', loadId: 'UF-5869092200',
+    origin: 'Ontario, CA', dest: 'Phoenix, AZ',
+    commodity: 'Beverages', priority: 'Normal',
+    sopAccount: 'default'
+  },
+  {
+    id: 'ZD-40283', customer: 'Summit Foods', clientKey: 'summit',
+    ref: 'PP-88203741', loadId: 'UF-5870331456',
+    origin: 'Dallas, TX', dest: 'Houston, TX',
+    commodity: 'Packaged Snacks', priority: 'High',
+    sopAccount: 'pepsi'
+  },
+  {
+    id: 'ZD-40284', customer: 'Summit Foods', clientKey: 'summit',
+    ref: 'PP-66401289', loadId: 'UF-5871204567',
+    origin: 'Austin, TX', dest: 'San Antonio, TX',
+    commodity: 'Refrigerated Produce', priority: 'Normal',
+    sopAccount: 'pepsi'
+  }
+];
+
+// ─── SOP DEFINITIONS ───
+const SOP_STANDARD = [
+  {
+    step: 1, title: 'Open Zendesk & Retrieve Ticket',
+    action: 'browser',
+    detail: 'Navigate to Zendesk portal. Locate the assigned ticket by ticket ID. Extract: customer reference number, load ID, origin, destination, commodity type, priority level.',
+    substeps: ['Open Zendesk portal URL','Search for ticket by ID','Extract all shipment metadata from ticket body']
+  },
+  {
+    step: 2, title: 'Log into BluJay TMS',
+    action: 'browser',
+    detail: 'Open the configured BluJay portal URL. Enter credentials (username + password). Verify successful login by confirming the dashboard loads.',
+    substeps: ['Navigate to BluJay URL','Enter username and password','Confirm dashboard is visible']
+  },
+  {
+    step: 3, title: 'Search Shipment in BluJay',
+    action: 'browser',
+    detail: 'Use the shipment search to find the record by customer reference number (PO/Ref). Verify the shipment exists and is in a processable status.',
+    substeps: ['Enter customer ref in search field','Execute search','Verify shipment found and status is valid']
+  },
+  {
+    step: 4, title: 'Extract Shipment Data from BluJay',
+    action: 'extract',
+    detail: 'From the shipment record, extract: carrier, rate, commodity, origin/destination, equipment type, pickup/delivery windows, weight, quantity.',
+    substeps: ['Open shipment detail view','Extract all required fields','Store extracted data for validation']
+  },
+  {
+    step: 5, title: 'Cross-Reference Against Workload',
+    action: 'validate',
+    detail: 'Open the Workload portal. Find the matching load by load ID. Compare commodity, route, and rate between BluJay shipment and Workload record.',
+    substeps: ['Open Workload portal','Search for load by ID','Compare commodity fields for match','Compare origin/destination','Compare rate if available']
+  },
+  {
+    step: 6, title: 'Determine Outcome',
+    action: 'decision',
+    detail: 'If all fields match → mark as verified and complete the ticket. If any mismatch is found (especially commodity) → escalate to human reviewer with mismatch details.',
+    substeps: ['Evaluate match results','If MATCH: complete ticket, log success','If MISMATCH: flag for HITL review with details']
+  }
+];
+
+const SOP_NONSTANDARD = [
+  {
+    step: 1, title: 'Open Zendesk & Retrieve Ticket',
+    action: 'browser',
+    detail: 'Navigate to Zendesk portal. Locate the assigned ticket by ticket ID. Extract all shipment metadata. Flag ticket priority — High priority tickets require enhanced validation.',
+    substeps: ['Open Zendesk portal URL','Search for ticket by ID','Extract shipment metadata','Note priority level for routing']
+  },
+  {
+    step: 2, title: 'Log into BluJay TMS',
+    action: 'browser',
+    detail: 'Open the configured BluJay portal URL. Enter credentials. Verify successful login. For non-standard flows, confirm access to advanced shipment details.',
+    substeps: ['Navigate to BluJay URL','Enter credentials','Confirm advanced access available']
+  },
+  {
+    step: 3, title: 'Search & Extract Shipment',
+    action: 'extract',
+    detail: 'Search by customer reference. Extract full shipment record including carrier allocation, spot bid status, temperature control requirements, and fuel surcharge.',
+    substeps: ['Search by customer ref','Extract standard fields','Extract extended fields (spot bid, temp control, fuel surcharge)']
+  },
+  {
+    step: 4, title: 'Cross-Reference Against Workload (Enhanced)',
+    action: 'validate',
+    detail: 'Open Workload portal. Find matching load. Perform enhanced validation: commodity match, route match, rate comparison, and check for any override flags or special handling instructions.',
+    substeps: ['Open Workload portal','Search for load by ID','Compare commodity (exact match required)','Compare route origin/destination','Compare rate and flag variance > 10%','Check for special handling flags']
+  },
+  {
+    step: 5, title: 'Commodity Mismatch Detection',
+    action: 'decision',
+    detail: 'If commodity between BluJay and Workload does not match exactly, this is a critical mismatch. Do NOT auto-resolve. Immediately escalate to human reviewer with full context.',
+    substeps: ['Compare BluJay commodity vs Workload commodity','If EXACT MATCH: proceed to completion','If MISMATCH: halt automation, escalate to HITL']
+  },
+  {
+    step: 6, title: 'HITL Escalation or Completion',
+    action: 'decision',
+    detail: 'For mismatches: create "Needs Attention" flag in Pace dashboard with both commodity values, shipment details, and recommended action. For matches: mark ticket as verified and complete.',
+    substeps: ['If escalation: post to Pace dashboard with mismatch details','If escalation: include BluJay value, Workload value, shipment ref','If completion: update ticket status to Resolved','Log outcome in audit trail']
+  }
+];
+
+// ─── STATE ───
+let selectedUI = 'classic';
+let selectedTicket = null;
+
+// ─── EVENT HANDLERS ───
+function onClientChange() {
+  const clientKey = document.getElementById('clientSelect').value;
+  const ticketSel = document.getElementById('ticketSelect');
+  const detailsDiv = document.getElementById('ticketDetails');
+
+  detailsDiv.classList.remove('visible');
+  detailsDiv.innerHTML = '';
+  selectedTicket = null;
+  updateTriggerBtn();
+
+  if (!clientKey) {
+    ticketSel.innerHTML = '<option value="">— Select client first —</option>';
+    ticketSel.disabled = true;
+    renderSOP(null);
+    return;
+  }
+
+  const filtered = TICKETS.filter(t => t.clientKey === clientKey);
+  ticketSel.innerHTML = '<option value="">— Choose ticket —</option>' +
+    filtered.map(t => `<option value="${t.id}">${t.id} — ${t.ref} (${t.commodity})</option>`).join('');
+  ticketSel.disabled = false;
+  renderSOP(null);
 }
 
-/* ── Trigger Run ── */
-function triggerRun() {
-  const btn = document.getElementById('triggerBtn');
-  const customer = document.getElementById('customerSelect').value;
-  const portal = document.getElementById('portalSelect').value;
-  const url = document.getElementById('portalUrl').value;
-  const user = document.getElementById('credUsername').value;
-  const sop = document.getElementById('sopText').value.trim();
+function onTicketChange() {
+  const ticketId = document.getElementById('ticketSelect').value;
+  const detailsDiv = document.getElementById('ticketDetails');
 
-  if (!customer) { showToast('Please select a customer.'); return; }
-  if (!portal) { showToast('Please select a target portal.'); return; }
-  if (!sop) { showToast('Please enter SOP steps.'); return; }
+  if (!ticketId) {
+    detailsDiv.classList.remove('visible');
+    selectedTicket = null;
+    updateTriggerBtn();
+    renderSOP(null);
+    return;
+  }
 
-  btn.classList.add('running');
-  btn.querySelector('.btn-label').textContent = 'Running…';
-  document.querySelector('.status-badge').innerHTML = '<span class="status-dot" style="background:#f59e0b;"></span> Running';
-  document.querySelector('.status-badge').style.background = '#fffbeb';
-  document.querySelector('.status-badge').style.color = '#d97706';
-  document.querySelector('.status-badge').style.borderColor = '#fde68a';
+  selectedTicket = TICKETS.find(t => t.id === ticketId);
+  const t = selectedTicket;
+  const prioClass = t.priority === 'High' ? 'priority-high' : 'priority-normal';
 
-  showToast('Process triggered — Pace is starting the workflow…');
-
-  setTimeout(() => {
-    btn.classList.remove('running');
-    btn.classList.add('success');
-    btn.querySelector('.btn-label').textContent = 'Process Started ✓';
-    btn.querySelector('.btn-icon').textContent = '✓';
-    document.querySelector('.status-badge').innerHTML = '<span class="status-dot" style="background:#2563eb;"></span> In Progress';
-    document.querySelector('.status-badge').style.background = '#eff6ff';
-    document.querySelector('.status-badge').style.color = '#2563eb';
-    document.querySelector('.status-badge').style.borderColor = '#bfdbfe';
-    showToast('Process started successfully. Track progress on the Pace Dashboard.', 5000);
-    setTimeout(() => { btn.classList.remove('success'); btn.querySelector('.btn-label').textContent = 'Run Process'; btn.querySelector('.btn-icon').textContent = '▶'; }, 4000);
-  }, 3000);
+  detailsDiv.innerHTML = `
+    <div class="td-row"><span class="td-label">Ticket</span><span class="td-value">${t.id}</span></div>
+    <div class="td-row"><span class="td-label">Customer</span><span class="td-value">${t.customer}</span></div>
+    <div class="td-row"><span class="td-label">Reference</span><span class="td-value">${t.ref}</span></div>
+    <div class="td-row"><span class="td-label">Load ID</span><span class="td-value">${t.loadId}</span></div>
+    <div class="td-row"><span class="td-label">Route</span><span class="td-value">${t.origin} → ${t.dest}</span></div>
+    <div class="td-row"><span class="td-label">Commodity</span><span class="td-value">${t.commodity}</span></div>
+    <div class="td-row"><span class="td-label">Priority</span><span class="td-value ${prioClass}">${t.priority}</span></div>
+  `;
+  detailsDiv.classList.add('visible');
+  updateTriggerBtn();
+  renderSOP(t);
 }
 
-/* ── Portal URL auto-fill ── */
-const PORTAL_URLS = {
-  bluejay: 'https://tms.e2open.com/bluejay/sso',
-  zendesk: 'https://uberfreight.zendesk.com/agent',
-  workload: 'https://freight.uber.com/workload',
-  sap_ariba: 'https://service.ariba.com/Sourcing.do'
-};
-document.getElementById('portalSelect').addEventListener('change', function() {
-  document.getElementById('portalUrl').value = PORTAL_URLS[this.value] || '';
-});
+function toggleUI(btn) {
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedUI = btn.dataset.ui;
 
-/* ══════════════════════════════════════════
-   PLAYWRIGHT HELPERS — window.triggerX pattern
-   ══════════════════════════════════════════ */
+  const urlEl = document.getElementById('bluejayUrl');
+  if (selectedUI === 'classic') {
+    urlEl.textContent = 'https://uber-freight-demo.vercel.app/bluejay-portal.html';
+  } else {
+    urlEl.textContent = 'https://uber-freight-demo.vercel.app/bluejay-portal-newUi.html';
+  }
 
-window.triggerSelectCustomer = function(value) {
-  const sel = document.getElementById('customerSelect');
-  sel.value = value;
-  sel.dispatchEvent(new Event('change'));
-  showToast('Customer set to ' + sel.options[sel.selectedIndex].text);
-  return { success: true, customer: value };
-};
+  if (selectedTicket) renderSOP(selectedTicket);
+}
 
-window.triggerSelectPortal = function(value) {
-  const sel = document.getElementById('portalSelect');
-  sel.value = value;
-  sel.dispatchEvent(new Event('change'));
-  showToast('Portal set to ' + sel.options[sel.selectedIndex].text);
-  return { success: true, portal: value, url: PORTAL_URLS[value] || '' };
-};
+// ─── SOP RENDERING ───
+function renderSOP(ticket) {
+  const container = document.getElementById('sopContent');
+  const label = document.getElementById('sopClientLabel');
 
-window.triggerSetPortalUrl = function(url) {
-  document.getElementById('portalUrl').value = url;
-  showToast('Portal URL set');
-  return { success: true, url: url };
-};
+  if (!ticket) {
+    container.innerHTML = '<div class="sop-empty">Select a client and ticket above to preview the SOP steps.</div>';
+    label.textContent = '';
+    return;
+  }
 
-window.triggerSetCredentials = function(username, password) {
-  document.getElementById('credUsername').value = username;
-  document.getElementById('credPassword').value = password;
-  showToast('Credentials set for ' + username);
-  return { success: true, username: username };
-};
+  // Choose SOP based on ticket: Summit Foods (pepsi account) with High priority = non-standard
+  const isNonStandard = ticket.sopAccount === 'pepsi' && ticket.priority === 'High';
+  const steps = isNonStandard ? SOP_NONSTANDARD : SOP_STANDARD;
+  const uiLabel = selectedUI === 'classic' ? 'Classic UI' : 'New UI';
+  const sopType = isNonStandard ? 'Non-Standard (HITL)' : 'Standard';
 
-window.triggerSetSOP = function(text) {
-  document.getElementById('sopText').value = text;
-  showToast('SOP updated (' + text.split('\n').length + ' steps)');
-  return { success: true, lines: text.split('\n').length };
-};
+  label.textContent = `${ticket.customer} · ${sopType} · BluJay ${uiLabel}`;
 
-window.triggerRun = function() {
-  triggerRun();
-  return { success: true, message: 'Process triggered' };
-};
-
-window.triggerGetConfig = function() {
-  return {
-    customer: document.getElementById('customerSelect').value,
-    portal: document.getElementById('portalSelect').value,
-    portal_url: document.getElementById('portalUrl').value,
-    username: document.getElementById('credUsername').value,
-    sop: document.getElementById('sopText').value,
-    sop_lines: document.getElementById('sopText').value.split('\n').length
+  const chipMap = {
+    browser: '<span class="sop-action-chip chip-browser">🌐 Browser</span>',
+    extract: '<span class="sop-action-chip chip-extract">📋 Extract</span>',
+    validate: '<span class="sop-action-chip chip-validate">✓ Validate</span>',
+    decision: '<span class="sop-action-chip chip-decision">⚡ Decision</span>'
   };
-};
+
+  // Build the BluJay URL that the agent will use
+  const bjUrl = selectedUI === 'classic'
+    ? 'bluejay-portal.html'
+    : 'bluejay-portal-newUi.html';
+
+  let html = '<table class="sop-table"><thead><tr><th style="width:50px">Step</th><th style="width:100px">Type</th><th>Action</th></tr></thead><tbody>';
+
+  steps.forEach(s => {
+    // Dynamically inject ticket-specific values into the detail text
+    let detail = s.detail
+      .replace(/ticket ID/gi, `ticket <strong>${ticket.id}</strong>`)
+      .replace(/customer reference number/gi, `customer ref <strong>${ticket.ref}</strong>`)
+      .replace(/customer ref/gi, `customer ref <strong>${ticket.ref}</strong>`)
+      .replace(/load ID/gi, `load ID <strong>${ticket.loadId}</strong>`);
+
+    // Inject BluJay URL context for login step
+    if (s.title.includes('Log into BluJay')) {
+      detail = detail.replace(/BluJay portal URL/gi, `BluJay ${uiLabel} (<code>${bjUrl}</code>)`);
+    }
+
+    const subHtml = s.substeps
+      ? '<ul class="sop-substeps">' + s.substeps.map(ss => `<li>${ss}</li>`).join('') + '</ul>'
+      : '';
+
+    html += `<tr>
+      <td><span class="sop-step-num">${s.step}</span></td>
+      <td>${chipMap[s.action] || ''}</td>
+      <td><strong>${s.title}</strong><br>${detail}${subHtml}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ─── TRIGGER BUTTON STATE ───
+function updateTriggerBtn() {
+  const btn = document.getElementById('triggerBtn');
+  btn.disabled = !selectedTicket;
+}
+
+// ─── TRIGGER WORKFLOW ───
+async function triggerWorkflow() {
+  const btn = document.getElementById('triggerBtn');
+  const statusDiv = document.getElementById('triggerStatus');
+  const t = selectedTicket;
+  if (!t) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Running…';
+  statusDiv.classList.add('visible');
+
+  const bjUrl = selectedUI === 'classic'
+    ? 'https://uber-freight-demo.vercel.app/bluejay-portal.html'
+    : 'https://uber-freight-demo.vercel.app/bluejay-portal-newUi.html';
+  const uiLabel = selectedUI === 'classic' ? 'Classic UI' : 'New UI';
+  const isHITL = t.priority === 'High' && t.sopAccount === 'pepsi';
+
+  const steps = [
+    { label: 'Opening Zendesk', detail: `Navigating to Zendesk portal, locating ticket ${t.id}…` },
+    { label: 'Reading Ticket', detail: `Extracting metadata — Ref: ${t.ref}, Load: ${t.loadId}, Route: ${t.origin} → ${t.dest}, Commodity: ${t.commodity}` },
+    { label: 'Logging into BluJay', detail: `Opening BluJay ${uiLabel} at ${bjUrl}. Entering credentials for FREIGHT_SUMMIT_ALL…` },
+    { label: 'Searching Shipment', detail: `Searching BluJay for customer ref ${t.ref}…` },
+    { label: 'Extracting Data', detail: `Found shipment. Extracting carrier, rate, commodity, route, equipment, pickup/delivery windows…` },
+    { label: 'Cross-Referencing', detail: `Opening Workload portal. Searching for load ${t.loadId}. Comparing commodity and route…` }
+  ];
+
+  if (isHITL) {
+    steps.push({ label: 'Mismatch Detected', detail: `⚠️ Commodity mismatch — BluJay: PACKAGED SNACKS vs Workload: Frozen Foods. Escalating to human reviewer.` });
+    steps.push({ label: 'HITL Escalation', detail: `Created "Needs Attention" flag in Pace dashboard. Ticket ${t.id} requires manual review. Workflow paused.` });
+  } else {
+    steps.push({ label: 'Validation Passed', detail: `✓ All fields match. Commodity: ${t.commodity}. Route confirmed. Rate verified.` });
+    steps.push({ label: 'Completing', detail: `Marking ticket ${t.id} as verified. Updating status to Resolved. Logging audit trail.` });
+  }
+
+  // Render progress
+  statusDiv.innerHTML = '<div class="progress-steps">' +
+    steps.map((s, i) => `<div class="p-step" id="pstep${i}"><div class="p-step-dot"></div>${s.label}</div>`).join('') +
+    '</div><div id="stepDetail" class="status-msg running" style="margin-top:12px;text-align:center;"></div>';
+
+  // Animate through steps
+  for (let i = 0; i < steps.length; i++) {
+    const el = document.getElementById(`pstep${i}`);
+    el.classList.add('active');
+    document.getElementById('stepDetail').textContent = steps[i].detail;
+    document.getElementById('stepDetail').className = 'status-msg running';
+
+    await sleep(1800 + Math.random() * 1200);
+
+    el.classList.remove('active');
+    el.classList.add('done');
+  }
+
+  // Final status
+  if (isHITL) {
+    document.getElementById('stepDetail').innerHTML = '⚠️ <strong>Workflow paused — Needs Attention.</strong> Commodity mismatch requires human review in Pace Dashboard.';
+    document.getElementById('stepDetail').className = 'status-msg error';
+  } else {
+    document.getElementById('stepDetail').innerHTML = '✅ <strong>Workflow complete.</strong> Ticket verified and resolved. All fields matched successfully.';
+    document.getElementById('stepDetail').className = 'status-msg success';
+  }
+
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4l-6.5 17L10 14 3 17.5 1 10l22-6z"/></svg> Run Again';
+  btn.disabled = false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
+
+<style>
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+</style>
 </body>
 </html>
-<!-- vercel-cache-bust-1773168393 -->
