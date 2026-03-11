@@ -508,6 +508,49 @@ function updateTriggerBtn() {
   document.getElementById('triggerBtn').disabled = !selectedTicket;
 }
 
+// ─── SUPABASE CONFIG ───
+const SB_URL = 'https://csvjcpmxndgaujxlvikw.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdmpjcG14bmRnYXVqeGx2aWt3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjAyOTkzNiwiZXhwIjoyMDg3NjA1OTM2fQ.81sjVPgI5QzYLlwz1YwbkCNxK-07Rki98px_JUhK6To';
+const PROCESS_ID = '65dbe6b4-122f-458c-b7ff-6f99c951c109'; // TMS Ops
+const DASHBOARD_BASE = 'https://pace-live-dashboard.vercel.app';
+
+function uuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+async function sbPost(table, body) {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`POST ${table} failed: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+async function sbPatch(table, query, body) {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`PATCH ${table} failed: ${res.status}`);
+  return res.json();
+}
+
 // ─── TRIGGER WORKFLOW ───
 async function triggerWorkflow() {
   const btn = document.getElementById('triggerBtn');
@@ -520,39 +563,158 @@ async function triggerWorkflow() {
   statusDiv.classList.add('visible');
 
   const isHITL = t.priority === 'High' && t.sopAccount === 'pepsi';
+  const runId = uuid();
+  const now = new Date().toISOString();
+  const runName = `TMS-${t.customer.replace(/\s/g,'').toUpperCase()}-${now.slice(5,10).replace('-','')}-${now.slice(11,16).replace(':','')}`;
 
   // Build progress from the EDITED SOP steps
-  const steps = currentSOPSteps.map(s => ({ label: s.title, detail: s.detail }));
+  const steps = currentSOPSteps.map(s => ({
+    label: s.title,
+    detail: s.detail,
+    action: s.action,
+    substeps: s.substeps || []
+  }));
 
   // Append outcome steps
   if (isHITL) {
-    steps.push({ label:'Mismatch Detected', detail:'⚠️ Commodity mismatch — BluJay: PACKAGED SNACKS vs Workload: Frozen Foods. Escalating to human reviewer.' });
-    steps.push({ label:'HITL Escalation', detail:`Created "Needs Attention" flag in Pace dashboard. Ticket ${t.id} requires manual review.` });
+    steps.push({ label:'Mismatch Detected', action:'decision',
+      detail:'Commodity mismatch — BluJay: PACKAGED SNACKS vs Workload: Frozen Foods. Escalating to human reviewer.',
+      substeps:[] });
+    steps.push({ label:'HITL Escalation', action:'decision',
+      detail:`Created "Needs Attention" flag. Ticket ${t.id} requires manual review.`,
+      substeps:[] });
   } else {
-    steps.push({ label:'Validation Passed', detail:`✓ All fields match. Commodity: ${t.commodity}. Route confirmed.` });
-    steps.push({ label:'Completing', detail:`Marking ticket ${t.id} as verified. Updating status to Resolved.` });
+    steps.push({ label:'Validation Passed', action:'validate',
+      detail:`All fields match. Commodity: ${t.commodity}. Route confirmed.`,
+      substeps:[] });
+    steps.push({ label:'Completing', action:'browser',
+      detail:`Marking ticket ${t.id} as verified. Updating status to Resolved.`,
+      substeps:[] });
   }
 
+  // Render progress UI
   statusDiv.innerHTML = '<div class="progress-steps">' +
     steps.map((s,i) => `<div class="p-step" id="pstep${i}"><div class="p-step-dot"></div>${s.label}</div>`).join('') +
     '</div><div id="stepDetail" class="status-msg running" style="margin-top:12px;text-align:center;"></div>';
 
-  for (let i = 0; i < steps.length; i++) {
-    const el = document.getElementById(`pstep${i}`);
-    el.classList.add('active');
-    document.getElementById('stepDetail').textContent = steps[i].detail;
-    document.getElementById('stepDetail').className = 'status-msg running';
-    await sleep(1500 + Math.random() * 1000);
-    el.classList.remove('active');
-    el.classList.add('done');
-  }
+  try {
+    // 1. Create the run in Supabase
+    await sbPost('activity_runs', {
+      id: runId,
+      process_id: PROCESS_ID,
+      name: runName,
+      document_name: `${t.customer} — ${t.id}`,
+      status: 'in_progress',
+      current_status_text: `Processing ${t.id} for ${t.customer}...`
+    });
 
-  if (isHITL) {
-    document.getElementById('stepDetail').innerHTML = '⚠️ <strong>Workflow paused — Needs Attention.</strong> Commodity mismatch requires human review.';
+    // 2. Walk through each SOP step, log to Supabase
+    const chipMap = { browser:'Browser Action', extract:'Data Extraction', validate:'Validation', decision:'Decision Point' };
+    const logTypeMap = { browser:'system', extract:'system', validate:'system', decision:'decision' };
+
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
+      const el = document.getElementById(`pstep${i}`);
+      el.classList.add('active');
+      document.getElementById('stepDetail').textContent = s.detail;
+      document.getElementById('stepDetail').className = 'status-msg running';
+
+      // Log this step to Supabase
+      const logType = logTypeMap[s.action] || 'system';
+      const reasoning = s.substeps.length > 0
+        ? s.substeps.map((sub, j) => `${j+1}. ${sub}`)
+        : [s.detail];
+
+      await sbPost('activity_logs', {
+        id: uuid(),
+        run_id: runId,
+        step_number: i + 1,
+        log_type: logType,
+        message: s.detail,
+        metadata: {
+          step_name: s.label,
+          action_type: chipMap[s.action] || s.action,
+          reasoning_steps: reasoning
+        }
+      });
+
+      await sleep(1200 + Math.random() * 800);
+      el.classList.remove('active');
+      el.classList.add('done');
+    }
+
+    // 3. Log completion/escalation entry
+    const finalStatus = isHITL ? 'needs_attention' : 'done';
+    const finalMessage = isHITL
+      ? `⚠️ Commodity mismatch: BluJay=PACKAGED SNACKS vs Workload=Frozen Foods. Ticket ${t.id} escalated for human review.`
+      : `✅ Load verified. Commodity: ${t.commodity}. Ticket ${t.id} resolved.`;
+    const finalLogType = isHITL ? 'error' : 'complete';
+
+    await sbPost('activity_logs', {
+      id: uuid(),
+      run_id: runId,
+      step_number: steps.length,
+      log_type: finalLogType,
+      message: finalMessage,
+      metadata: {
+        step_name: isHITL ? 'HITL Escalation' : 'Run Complete',
+        ticket_id: t.id,
+        customer: t.customer,
+        commodity: t.commodity,
+        route: `${t.origin} → ${t.dest}`
+      }
+    });
+
+    // If HITL, add an artifact showing the mismatch
+    if (isHITL) {
+      await sbPost('activity_logs', {
+        id: uuid(),
+        run_id: runId,
+        step_number: steps.length - 1,
+        log_type: 'artifact',
+        message: 'Commodity Mismatch',
+        metadata: {
+          step_name: 'Commodity Mismatch',
+          data: {
+            'Shipment Ref': t.ref,
+            'Load ID': t.loadId,
+            'BluJay Commodity': 'PACKAGED SNACKS',
+            'Workload Commodity': 'Frozen Foods',
+            'Match': '❌ MISMATCH',
+            'Impact': 'Requires human review before load can be awarded',
+            'SOP Rule': 'Non-standard flow — commodity must match exactly'
+          }
+        }
+      });
+    }
+
+    // 4. Update run status
+    await sbPatch('activity_runs', `id=eq.${runId}`, {
+      status: finalStatus,
+      current_status_text: finalMessage
+    });
+
+    // 5. Show result with dashboard link
+    const dashboardLink = `${DASHBOARD_BASE}/done/processes`;
+    if (isHITL) {
+      document.getElementById('stepDetail').innerHTML =
+        `⚠️ <strong>Workflow paused — Needs Attention.</strong> Commodity mismatch requires human review.<br>` +
+        `<a href="${dashboardLink}" target="_blank" style="color:#1a73e8;font-weight:600;margin-top:8px;display:inline-block;">` +
+        `View on Pace Dashboard →</a>`;
+      document.getElementById('stepDetail').className = 'status-msg error';
+    } else {
+      document.getElementById('stepDetail').innerHTML =
+        `✅ <strong>Workflow complete.</strong> Ticket verified and resolved.<br>` +
+        `<a href="${dashboardLink}" target="_blank" style="color:#1a73e8;font-weight:600;margin-top:8px;display:inline-block;">` +
+        `View on Pace Dashboard →</a>`;
+      document.getElementById('stepDetail').className = 'status-msg success';
+    }
+
+  } catch (err) {
+    console.error('Trigger error:', err);
+    document.getElementById('stepDetail').innerHTML =
+      `❌ <strong>Error:</strong> ${err.message}`;
     document.getElementById('stepDetail').className = 'status-msg error';
-  } else {
-    document.getElementById('stepDetail').innerHTML = '✅ <strong>Workflow complete.</strong> Ticket verified and resolved.';
-    document.getElementById('stepDetail').className = 'status-msg success';
   }
 
   btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Again';
