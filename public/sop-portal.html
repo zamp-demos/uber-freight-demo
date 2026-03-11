@@ -836,6 +836,90 @@ body{font-family:'Google Sans','Roboto',Arial,sans-serif;background:#f8f9fa;colo
             })
           });
 
+          // 2b. Collect SOP data from visible tables
+          var selectedItem = document.querySelector('#accountDD .dd-item.selected');
+          var accountKey = selectedItem ? selectedItem.dataset.account : 'ball';
+
+          // BluJay config per account
+          var bluejayConfig = {
+            ball:    { url: 'https://uber-freight-demo.vercel.app/bluejay-portal.html', username: 'ACME_VENDOR_ACCESS' },
+            niagara: { url: 'https://uber-freight-demo.vercel.app/bluejay-portal.html', username: 'ATLAS_VENDOR_ACCESS' },
+            pepsi:   { url: 'https://uber-freight-demo.vercel.app/bluejay-portal-newUi.html', username: 'FREIGHT_SUMMIT_ALL' }
+          };
+
+          // Read SOP steps from visible table
+          var sopSteps = window.triggerGetAllSteps();
+
+          // Read prechecks from visible tbody
+          var prechecks = [];
+          var pTable = document.getElementById('prechecksTable');
+          if (pTable) {
+            var pBodies = Array.from(pTable.querySelectorAll('tbody'));
+            var pVisible = pBodies.find(function(tb) { return tb.style.display !== 'none'; }) || pBodies[0];
+            if (pVisible) {
+              pVisible.querySelectorAll('tr').forEach(function(row) {
+                var obj = {};
+                row.querySelectorAll('td[data-field]').forEach(function(cell) {
+                  obj[cell.dataset.field] = cell.textContent;
+                });
+                if (Object.keys(obj).length > 0) prechecks.push(obj);
+              });
+            }
+          }
+
+          // Read macros from macros table (not account-filtered, read all rows)
+          var macros = [];
+          var mTable = document.getElementById('macrosTable');
+          if (mTable) {
+            mTable.querySelectorAll('tbody tr').forEach(function(row) {
+              var obj = {};
+              row.querySelectorAll('td[data-field]').forEach(function(cell) {
+                obj[cell.dataset.field] = cell.textContent;
+              });
+              if (Object.keys(obj).length > 0) macros.push(obj);
+            });
+          }
+
+          // Find the macro row for this account
+          var accountMacro = macros.find(function(m) {
+            return m.account && m.account.toLowerCase().indexOf(account.toLowerCase().split(' ')[0]) >= 0;
+          }) || {};
+
+          // 2c. Post the sop_trigger log entry for Pace pickup
+          await fetch(SUPABASE_URL + '/rest/v1/activity_logs', {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_KEY,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              run_id: run.id,
+              step_number: 0,
+              log_type: 'system',
+              message: 'sop_trigger',
+              metadata: {
+                type: 'sop_trigger',
+                status: 'pending_pickup',
+                account: account,
+                account_key: accountKey,
+                sop_steps: sopSteps,
+                prechecks: prechecks,
+                macros: {
+                  escalation: accountMacro.escalation || '',
+                  confirmed: accountMacro.confirmed || '',
+                  tonu: accountMacro.tonu || ''
+                },
+                portals: {
+                  zendesk: 'https://uber-freight-demo.vercel.app/zendesk-portal.html',
+                  workload: 'https://uber-freight-demo.vercel.app/workload-portal.html'
+                },
+                bluejay: bluejayConfig[accountKey] || bluejayConfig.ball
+              }
+            })
+          });
+
           // 3. Show success toast with dashboard link
           showRunToast(
             '<div><strong>&#10003; Run created: ' + runName + '</strong><br>' +
